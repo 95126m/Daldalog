@@ -4,6 +4,8 @@ import GlobalStyles from '@/styles/GlobalStyles';
 import router from '@/routes/Routers';
 import { onAuthStateChanged, getAuth } from 'firebase/auth';
 import useAuthStore from '@/store/AuthContext';
+import Header from '@/layouts/Header'
+import Footer from '@/layouts/Footer'
 
 function App() {
   const setUser = useAuthStore((state) => state.setUser);
@@ -20,7 +22,9 @@ function App() {
   return (
     <>
       <GlobalStyles />
+      <Header />
       <RouterProvider router={router} />
+      <Footer />
     </>
   );
 }

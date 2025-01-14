@@ -35,7 +35,7 @@ const GlobalStyles = () => {
         }
 
         body {
-          font-family: 'Freesentation-9Black', sans-serif;
+          font-family: 'S-CoreDream-3Light', Arial, sans-serif;
           color: ${color.white};
           width: 100%;
           height: 100%;
@@ -46,22 +46,13 @@ const GlobalStyles = () => {
           position: relative;
         }
 
-        p,
-        span,
-        div {
-          font-family: 'S-CoreDream-3Light';
-        }
-
         h1,
-        h2 {
-          font-family: 'STUNNING-Bd', 'Roboto';
-        }
-
+        h2,
         h3,
         h4,
         h5,
         h6 {
-          font-family: 'Roboto', sans-serif;
+          font-family: 'STUNNING-Bd', 'Roboto';
         }
 
         a {
@@ -73,7 +64,7 @@ const GlobalStyles = () => {
         }
 
         html {
-          font-size: ${fontSize.sm};
+          font-size: ${fontSize.md};
         }
       `}
     />
