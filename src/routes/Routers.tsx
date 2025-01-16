@@ -3,6 +3,7 @@ import { path } from '@/constants/path';
 import Signin from '@/pages/Signin';
 import Home from '@/pages/Home';
 import Write from '@/pages/Write';
+import Detail from '@/pages/Detail';
 
 const router = createBrowserRouter([
   {
@@ -10,7 +11,8 @@ const router = createBrowserRouter([
     element: <Home />,
   },
   {path: path.signin, element: <Signin />},
-  {path: path.write, element: <Write />}
+  {path: path.write, element: <Write />},
+  {path: path.detail, element: <Detail />}
 ]);
 
 export default router;

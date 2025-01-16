@@ -1,5 +1,6 @@
 export const path = {
   root: '/',
   signin: '/signin',
-  write: '/write'
+  write: '/write',
+  detail: 'detail'
 }
