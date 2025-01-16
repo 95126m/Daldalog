@@ -24,6 +24,10 @@ const Home = () => {
     navigate('/write'); 
   };
 
+  const handleDetail = () => {
+    navigate('/detail'); 
+  };
+
 
   const ITEMS_PER_PAGE = 3
 
@@ -104,7 +108,7 @@ const Home = () => {
                     alt={item.title}
                   />
                   <div className="text-container">
-                    <h3>{item.title}</h3>
+                    <h3 onClick={handleDetail}>{item.title}</h3>
                     <p>{item.date}</p>
                     <span>{item.content}</span>
                   </div>
@@ -139,10 +143,10 @@ const wrapperStyle = css`
   background-color: transparent;
 
   display: grid;
-  grid-template-columns: 6fr 2fr; /* 세 번째 섹션(왼쪽)이 더 넓게 설정됨 */
+  grid-template-columns: 6fr 2fr; 
   grid-template-rows: auto;
-  gap: 130px; /* 섹션 간 간격 */
-  padding: 0 250px; /* 좌우 여백 */
+  gap: 130px; 
+  padding: 0 250px; 
 
   section {
     display: flex;
@@ -156,25 +160,25 @@ const wrapperStyle = css`
     }
 
     section.third {
-      z-index: 2; /* 탭 버튼이 포함된 섹션을 더 높은 z-index로 설정 */
+      z-index: 2; 
     }
   }
 
   section.first {
-    grid-column: 1 / -1; /* 첫 번째 섹션은 전체 너비를 차지 */
+    grid-column: 1 / -1; 
   }
 
   section.second {
-    grid-column: 2; /* 두 번째 섹션은 오른쪽 */
-    grid-row: 2; /* 세 번째 섹션과 같은 행 */
+    grid-column: 2; 
+    grid-row: 2; 
     background-color: ${color.lightGray};
     padding: 30px;
-    margin-bottom: 120px;
+    margin-bottom: 250px;
   }
 
   section.third {
-    grid-column: 1; /* 세 번째 섹션은 왼쪽 */
-    grid-row: 2; /* 두 번째 섹션과 같은 행 */
+    grid-column: 1; 
+    grid-row: 2; 
     height: auto;
     display: flex;
     flex-direction: column;
@@ -288,10 +292,10 @@ const secondSectionTextStyle = css`
       ${color.darkYellow} 50%,
       ${color.gray} 50%
     );
-    background-size: 200% 100%; /* 배경 크기 두 배로 설정 */
-    background-position: right bottom; /* 기본 위치를 왼쪽으로 설정 */
-    -webkit-background-clip: text; /* 텍스트에만 배경 적용 */
-    -webkit-text-fill-color: transparent; /* 텍스트 채우기 투명 설정 */
+    background-size: 200% 100%;
+    background-position: right bottom;
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent;
     border: none;
     border-bottom: 3px solid ${color.yellow};
     cursor: pointer;
@@ -300,7 +304,7 @@ const secondSectionTextStyle = css`
       border 0.3s ease-in-out;
 
     &:hover {
-      background-position: left bottom; /* 배경을 오른쪽으로 이동 */
+      background-position: left bottom; 
     }
   }
 `
@@ -338,7 +342,7 @@ const writeIconStyle = css`
 const tabContainerStyle = css`
   position: relative;
   width: 100%;
-  z-index: 3; /* 다른 요소 위에 배치 */
+  z-index: 3;
   margin: 0;
   text-align: start;
 `
@@ -346,8 +350,8 @@ const tabContainerStyle = css`
 const tabButtonContainerStyle = css`
   display: flex;
   justify-content: flex-start;
-  pointer-events: auto; /* 클릭 가능하도록 보장 */
-  z-index: 3; /* 탭 버튼이 클릭 가능하도록 우선순위 설정 */
+  pointer-events: auto;
+  z-index: 3; 
 `
 
 const tabContentStyle = css`
@@ -387,10 +391,10 @@ const tabItemStyle = css`
       ${color.darkYellow} 50%,
       ${color.black} 50%
     );
-    background-size: 200% 100%; /* 배경 크기 두 배로 설정 */
-    background-position: right bottom; /* 기본 위치를 왼쪽으로 설정 */
-    -webkit-background-clip: text; /* 텍스트에만 배경 적용 */
-    -webkit-text-fill-color: transparent; /* 텍스트 채우기 투명 설정 */
+    background-size: 200% 100%; 
+    background-position: right bottom; 
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent; 
     border: none;
     cursor: pointer;
     transition:
