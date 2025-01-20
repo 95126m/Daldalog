@@ -1,20 +1,23 @@
-import { createBrowserRouter} from 'react-router-dom';
-import { path } from '@/constants/path';
-import Signin from '@/pages/Signin';
+import { createBrowserRouter } from 'react-router-dom';
 import Home from '@/pages/Home';
+import Signin from '@/pages/Signin';
 import Write from '@/pages/Write';
 import Detail from '@/pages/Detail';
 import Edit from '@/pages/Edit';
+import Layout from '@/layouts/Layout';
 
 const router = createBrowserRouter([
   {
-    path: path.root,
-    element: <Home />,
+    path: '/',
+    element: <Layout />, 
+    children: [
+      { path: '', element: <Home /> }, 
+      { path: 'signin', element: <Signin /> }, 
+      { path: 'write', element: <Write /> },
+      { path: 'detail/:id', element: <Detail /> }, 
+      { path: 'edit/:id', element: <Edit /> }, 
+    ],
   },
-  {path: path.signin, element: <Signin />},
-  {path: path.write, element: <Write />},
-  {path: path.detail, element: <Detail />},
-  {path: path.edit, element: <Edit />}
 ]);
 
 export default router;

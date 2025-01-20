@@ -1,9 +1,11 @@
 /** @jsxImportSource @emotion/react */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { css } from '@emotion/react'
 import { color } from '@/constants/color'
 import { fontSize } from '@/constants/font'
+import { getDatabase, ref, get } from 'firebase/database'
+import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import testImage from '@/assets/test-image.jpg'
 import sample from '@/assets/sample2.jpg'
 import EditIcon from '@mui/icons-material/Edit'
@@ -12,13 +14,18 @@ import TabButton from '@/components/TabButton'
 import Pagination from '@/components/Pagination'
 
 const Home = () => {
+  const navigate = useNavigate()
+  const auth = getAuth()
+  const database = getDatabase()
+  
   const allGroups = [
     '전체',
     ...Array.from(new Set(TabData.map(tab => tab.groupTitle)))
   ]
+  
   const [activeGroup, setActiveGroup] = useState<string>(allGroups[0])
   const [currentPage, setCurrentPage] = useState<number>(0)
-  const navigate = useNavigate()
+  const [isAdmin, setIsAdmin] = useState<boolean>(false)
 
   const handleWrite = () => {
     navigate('/write')
@@ -28,8 +35,31 @@ const Home = () => {
     navigate(`/detail/${id}`)
   }
 
-  const ITEMS_PER_PAGE = 3
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            const adminRef = ref(database, 'admin/uid')
+            const snapshot = await get(adminRef)
+            if (snapshot.exists() && snapshot.val() === user.uid) {
+              setIsAdmin(true) 
+            } else {
+              setIsAdmin(false) 
+            }
+          } else {
+            setIsAdmin(false) 
+          }
+        })
+      } catch (error) {
+        console.error('관리자 확인 오류:', error)
+        setIsAdmin(false)
+      }
+    }
+    checkAdmin()
+  }, [auth, database])
 
+  const ITEMS_PER_PAGE = 5
   const filteredData =
     activeGroup === '전체'
       ? TabData
@@ -38,7 +68,6 @@ const Home = () => {
             tab.groupTitle.trim().toLowerCase() ===
             activeGroup.trim().toLowerCase()
         )
-
   const totalPage = Math.ceil(filteredData.length / ITEMS_PER_PAGE)
   const startIndex = currentPage * ITEMS_PER_PAGE
   const displayedItems = filteredData.slice(
@@ -124,9 +153,11 @@ const Home = () => {
         </div>
       </section>
 
-      <div css={writeIconStyle}>
-        <EditIcon onClick={handleWrite} />
-      </div>
+      {isAdmin && (
+        <div css={writeIconStyle}>
+          <EditIcon onClick={handleWrite} />
+        </div>
+      )}
     </div>
   )
 }
@@ -182,6 +213,8 @@ const wrapperStyle = css`
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    margin-bottom: 100px;
+
   }
 `
 

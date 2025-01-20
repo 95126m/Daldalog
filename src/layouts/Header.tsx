@@ -1,5 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react'
+import { Link } from 'react-router-dom';
 import { useState } from 'react'
 import { color } from '@/constants/color'
 import { fontSize } from '@/constants/font'
@@ -14,7 +15,7 @@ const Header = () => {
 
   return (
     <div css={wrapperStyle}>
-      <h1>DALDALOG</h1>
+      <Link to="/"><h1>DALDALOG</h1></Link>
       <div
         className="icon-wrapper"
         css={iconWrapperStyle}>
