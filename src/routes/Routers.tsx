@@ -4,6 +4,7 @@ import Signin from '@/pages/Signin';
 import Home from '@/pages/Home';
 import Write from '@/pages/Write';
 import Detail from '@/pages/Detail';
+import Edit from '@/pages/Edit';
 
 const router = createBrowserRouter([
   {
@@ -12,7 +13,8 @@ const router = createBrowserRouter([
   },
   {path: path.signin, element: <Signin />},
   {path: path.write, element: <Write />},
-  {path: path.detail, element: <Detail />}
+  {path: path.detail, element: <Detail />},
+  {path: path.edit, element: <Edit />}
 ]);
 
 export default router;

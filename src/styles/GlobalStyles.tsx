@@ -1,6 +1,7 @@
 import { Global, css } from '@emotion/react'
 import { color } from '@/constants/color'
 import { fontSize } from '@/constants/font'
+import Cursor from '@/assets/cursor.cur'
 
 const GlobalStyles = () => {
   return (
@@ -44,6 +45,7 @@ const GlobalStyles = () => {
           margin: 0;
           padding: 0;
           position: relative;
+          cursor: url(${Cursor}), auto;
         }
 
         h1,

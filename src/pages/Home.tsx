@@ -18,16 +18,15 @@ const Home = () => {
   ]
   const [activeGroup, setActiveGroup] = useState<string>(allGroups[0])
   const [currentPage, setCurrentPage] = useState<number>(0)
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   const handleWrite = () => {
-    navigate('/write'); 
-  };
+    navigate('/write')
+  }
 
-  const handleDetail = () => {
-    navigate('/detail'); 
-  };
-
+  const handleDetail = (id: number) => {
+    navigate(`/detail/${id}`)
+  }
 
   const ITEMS_PER_PAGE = 3
 
@@ -108,7 +107,7 @@ const Home = () => {
                     alt={item.title}
                   />
                   <div className="text-container">
-                    <h3 onClick={handleDetail}>{item.title}</h3>
+                    <h3 onClick={() => handleDetail(item.id)}>{item.title}</h3>
                     <p>{item.date}</p>
                     <span>{item.content}</span>
                   </div>
@@ -143,10 +142,10 @@ const wrapperStyle = css`
   background-color: transparent;
 
   display: grid;
-  grid-template-columns: 6fr 2fr; 
+  grid-template-columns: 6fr 2fr;
   grid-template-rows: auto;
-  gap: 130px; 
-  padding: 0 250px; 
+  gap: 130px;
+  padding: 0 250px;
 
   section {
     display: flex;
@@ -160,25 +159,25 @@ const wrapperStyle = css`
     }
 
     section.third {
-      z-index: 2; 
+      z-index: 2;
     }
   }
 
   section.first {
-    grid-column: 1 / -1; 
+    grid-column: 1 / -1;
   }
 
   section.second {
-    grid-column: 2; 
-    grid-row: 2; 
+    grid-column: 2;
+    grid-row: 2;
     background-color: ${color.lightGray};
     padding: 30px;
     margin-bottom: 250px;
   }
 
   section.third {
-    grid-column: 1; 
-    grid-row: 2; 
+    grid-column: 1;
+    grid-row: 2;
     height: auto;
     display: flex;
     flex-direction: column;
@@ -294,7 +293,7 @@ const secondSectionTextStyle = css`
     );
     background-size: 200% 100%;
     background-position: right bottom;
-    -webkit-background-clip: text; 
+    -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     border: none;
     border-bottom: 3px solid ${color.yellow};
@@ -304,7 +303,7 @@ const secondSectionTextStyle = css`
       border 0.3s ease-in-out;
 
     &:hover {
-      background-position: left bottom; 
+      background-position: left bottom;
     }
   }
 `
@@ -351,7 +350,7 @@ const tabButtonContainerStyle = css`
   display: flex;
   justify-content: flex-start;
   pointer-events: auto;
-  z-index: 3; 
+  z-index: 3;
 `
 
 const tabContentStyle = css`
@@ -391,10 +390,10 @@ const tabItemStyle = css`
       ${color.darkYellow} 50%,
       ${color.black} 50%
     );
-    background-size: 200% 100%; 
-    background-position: right bottom; 
+    background-size: 200% 100%;
+    background-position: right bottom;
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent; 
+    -webkit-text-fill-color: transparent;
     border: none;
     cursor: pointer;
     transition:
