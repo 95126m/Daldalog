@@ -1,27 +1,47 @@
 /** @jsxImportSource @emotion/react */
-import { css } from '@emotion/react'
-import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
-import { color } from '@/constants/color'
-import { TabData } from '@/mocks/TabData'
-import { fontSize } from '@/constants/font'
-import Modal from '@/components/Modal'
+import { css } from '@emotion/react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { color } from '@/constants/color';
+import { TabData } from '@/mocks/TabData';
+import { fontSize } from '@/constants/font';
+import Modal from '@/components/Modal';
 
 const Detail = () => {
-  const item = TabData[0]
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const navigate = useNavigate()
+  const { id } = useParams(); 
+  const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const currentIndex = TabData.findIndex((tab) => tab.id === Number(id));
+  const item = TabData[currentIndex];
+
+  const prevItem = TabData[currentIndex - 1];
+  const nextItem = TabData[currentIndex + 1];
+
+  const handlePrev = () => {
+    if (prevItem) {
+      navigate(`/detail/${prevItem.id}`);
+    }
+  };
+
+  const handleNext = () => {
+    if (nextItem) {
+      navigate(`/detail/${nextItem.id}`);
+    }
+  };
 
   const handleBack = () => {
-    navigate(-1)
-  }
+    navigate(`/`);
+  };
+
+  const handleEdit = () => {
+    navigate(`/edit/${id}`);
+  };
 
   return (
     <div css={wrapperStyle}>
       <div className="title-section">
-        <div
-          key={item.id}
-          css={tabItemStyle}>
+        <div key={item.id} css={tabItemStyle}>
           <div className="text-container">
             <h4>{item.groupTitle}</h4>
             <h3>{item.title}</h3>
@@ -30,48 +50,38 @@ const Detail = () => {
         </div>
       </div>
 
-      <div
-        className="button-section"
-        css={btnWrapper}>
-        <button
-          css={deleteBtn}
-          onClick={() => setIsModalOpen(true)}>
+      <div className="button-section" css={btnWrapper}>
+        <button css={deleteBtn} onClick={() => setIsModalOpen(true)}>
           <p css={deleteText}>삭제</p>
         </button>
-        <button css={editBtn}>
+        <button css={editBtn} onClick={handleEdit}>
           <p css={editText}>수정</p>
         </button>
       </div>
 
-      <div
-        className="content-section"
-        css={contentSectionStyle}>
+      <div className="content-section" css={contentSectionStyle}>
         <span>{item.content}</span>
       </div>
 
       <div css={goMain}>
-        <button
-          css={goMainBtn}
-          onClick={handleBack}>
+        <button css={goMainBtn} onClick={handleBack}>
           메인으로
         </button>
       </div>
 
-      <div
-        className="other-content"
-        css={otherContentWrapper}>
+      <div className="other-content" css={otherContentWrapper}>
         <h1 css={otherContentTitleStyle}>
           {item.groupTitle}
           <span css={otherContentText}>의 다른 글</span>
         </h1>
         <div css={postsWrapper}>
-          <div css={prevContentWrapper}>
+          <div onClick={handlePrev} css={prevContentWrapper}>
             <p>이전 게시글</p>
-            <h4>{item.title}</h4>
+            <h4>{prevItem ? prevItem.title : '이전 게시글이 없습니다.'}</h4>
           </div>
-          <div css={nextContentWrapper}>
+          <div onClick={handleNext} css={nextContentWrapper}>
             <p>다음 게시글</p>
-            <h4>{item.title}</h4>
+            <h4>{nextItem ? nextItem.title : '다음 게시글이 없습니다.'}</h4>
           </div>
         </div>
       </div>
@@ -81,17 +91,18 @@ const Detail = () => {
           title="삭제하시겠습니까?"
           description="삭제한 게시글은 복구가 불가능합니다."
           onConfirm={() => {
-            alert('삭제되었습니다.')
-            setIsModalOpen(false)
+            alert('삭제되었습니다.');
+            setIsModalOpen(false);
           }}
           onCancel={() => setIsModalOpen(false)}
         />
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Detail
+export default Detail;
+
 
 const wrapperStyle = css`
   display: flex;

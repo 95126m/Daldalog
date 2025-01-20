@@ -13,6 +13,8 @@ const Footer = () => {
         <a href="">소개</a>
         <span>|</span>
         <a href="">이메일 문의</a>
+        <span>|</span>
+        <a href="">관리자 로그인</a>
       </nav>
     </div>
   )
