@@ -57,20 +57,5 @@ export const TabData = [
     content: '첫번째 게시글 내용입니다.',
     image: sample // 이미지 파일 사용
   },
-  {
-    id: 8,
-    groupTitle: '그룹3',
-    title: '그룹3 두번째 대표 게시글 제목',
-    date: '2025.02.01',
-    content: '두번째 게시글 내용입니다.',
-    image: sample // 이미지 파일 사용
-  },
-  {
-    id: 9,
-    groupTitle: '그룹3',
-    title: '그룹3 세번째 대표 게시글 제목',
-    date: '2025.03.01',
-    content: '세번째 게시글 내용입니다.',
-    image: sample // 이미지 파일 사용
-  }
+
 ];
