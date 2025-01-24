@@ -1,17 +1,18 @@
 /** @jsxImportSource @emotion/react */
+
+import { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { css } from '@emotion/react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-import {
-  doc,
-  updateDoc,
-  Timestamp,
-  collection,
-  getDocs
-} from 'firebase/firestore'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+import ReactQuill from 'react-quill'
+import 'react-quill/dist/quill.snow.css'
 import { db } from '@/api/firebaseApp'
+import { collection, addDoc, Timestamp } from 'firebase/firestore'
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL
+} from 'firebase/storage'
 import { color } from '@/constants/color'
 import { fontSize } from '@/constants/font'
 import FormatBoldIcon from '@mui/icons-material/FormatBold'
@@ -22,28 +23,12 @@ import FormatSizeIcon from '@mui/icons-material/FormatSize'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SelectBox from '@/components/SelectBox'
 
-interface Post {
-  id: string
-  title: string
-  groupTitle: string
-  content: string
-  date: string
-  image?: string
-}
-
-const Edit = () => {
-  const { id } = useParams<{ id: string }>()
-  const [postsData, setPostsData] = useState<Post[]>([])
-  const [currentPost, setCurrentPost] = useState<Post | null>(null)
+const Write = () => {
   const navigate = useNavigate()
   const [title, setTitle] = useState('')
-  const [markdownText, setMarkdownText] = useState('')
+  const [editorValue, setEditorValue] = useState('')
   const [selectedOption, setSelectedOption] = useState('프로젝트')
-
-  const currentIndex = postsData.findIndex(
-    post => post.id === id && post.groupTitle === currentPost?.groupTitle
-  )
-  const item = postsData[currentIndex]
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
 
   const handleSelectChange = (value: string) => {
     console.log('선택된 값:', value)
@@ -52,8 +37,7 @@ const Edit = () => {
 
   const options = [
     { label: '프로젝트', value: '프로젝트' },
-    { label: '트러블슈팅', value: '트러블슈팅' },
-    { label: '공지사항', value: '공지사항' }
+    { label: '트러블슈팅', value: '트러블슈팅' }
   ]
 
   const handleBack = () => {
@@ -61,100 +45,74 @@ const Edit = () => {
   }
 
   const handlePublish = async () => {
-    if (!title || !markdownText) {
+    if (!title || !editorValue) {
       alert('제목과 내용을 모두 입력해주세요.')
       return
     }
 
-    if (!id) {
-      console.error('URL에서 id를 가져오지 못했습니다.')
-      return
-    }
-
     try {
-      const postDoc = doc(db, 'posts', id)
-      await updateDoc(postDoc, {
+      const postsCollection = collection(db, 'posts')
+      await addDoc(postsCollection, {
         title,
         groupTitle: selectedOption,
-        content: markdownText,
+        content: editorValue,
+        image: imageUrl,
         date: Timestamp.fromDate(new Date())
       })
 
-      alert('게시글이 성공적으로 수정되었습니다!')
+      alert('게시글이 성공적으로 업로드되었습니다!')
       navigate('/')
     } catch (error) {
-      console.error('게시글 수정 실패:', error)
-      alert('게시글 수정 중 오류가 발생했습니다.')
+      console.error('게시글 업로드 실패:', error)
+      alert('게시글 업로드 중 오류가 발생했습니다.')
     }
   }
 
-  useEffect(() => {
-    const fetchPost = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, 'posts'))
-        const postsList: Post[] = []
+  const quillRef = useRef<ReactQuill>(null)
 
-        querySnapshot.forEach(doc => {
-          const post = doc.data()
-          postsList.push({
-            id: doc.id,
-            title: post.title,
-            groupTitle: post.groupTitle,
-            content: post.content,
-            date: post.date
-              ? new Date(post.date.seconds * 1000).toLocaleString()
-              : ''
+  // 이미지 업로드 핸들러
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const storage = getStorage()
+      const storageRef = ref(storage, `images/${file.name}`)
+      const uploadTask = uploadBytesResumable(storageRef, file)
+
+      uploadTask.on(
+        'state_changed',
+        snapshot => {
+          // 진행 상황을 알 수 있습니다 (optional)
+        },
+        error => {
+          console.error('이미지 업로드 실패:', error)
+        },
+        () => {
+          // 업로드 완료 후 URL 가져오기
+          getDownloadURL(uploadTask.snapshot.ref).then(downloadURL => {
+            // quillRef를 통해 에디터에 접근하여 이미지를 삽입
+            const quill = quillRef.current?.getEditor()
+            const range = quill?.getSelection()
+            if (range) {
+              quill?.insertEmbed(range.index, 'image', downloadURL)
+            }
           })
-        })
-
-        setPostsData(postsList)
-
-        const foundPost = postsList.find(post => post.id === id)
-        if (foundPost) {
-          setCurrentPost(foundPost)
-          setTitle(foundPost.title || '')
-          setMarkdownText(foundPost.content || '')
-          setSelectedOption(foundPost.groupTitle || '프로젝트')
-        } else {
-          console.error('해당 게시글을 찾을 수 없습니다.')
         }
-      } catch (error) {
-        console.error('게시글 가져오기 실패:', error)
-      }
+      )
     }
-
-    fetchPost()
-  }, [id])
-
-  useEffect(() => {
-    if (id && postsData.length > 0) {
-      const foundPost = postsData.find(post => post.id === id)
-      setCurrentPost(foundPost || null)
-    }
-  }, [id, postsData])
-
-  useEffect(() => {
-    if (currentPost) {
-      setTitle(currentPost.title || '')
-      setMarkdownText(currentPost.content || '')
-      setSelectedOption(currentPost.groupTitle || '프로젝트')
-    }
-  }, [currentPost])
+  }
 
   return (
     <div css={wrapperStyle}>
       <div
         className="title-section"
         css={titleWrapperStyle}>
-        {item && (
-          <input
-            type="text"
-            value={title || item.title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="제목을 입력하세요."
-            css={titleInputStyle}
-          />
-        )}
+        <input
+          type="text"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="제목을 입력하세요."
+          css={titleInputStyle}
+        />
       </div>
 
       <div
@@ -170,19 +128,14 @@ const Edit = () => {
 
       <div css={editorWrapperStyle}>
         <div css={contentWrapperStyle}>
-          {item && (
-            <textarea
-              value={markdownText || item.content}
-              onChange={e => setMarkdownText(e.target.value)}
-              placeholder="내용을 작성하세요."
-              css={textAreaStyle}
-            />
-          )}
-        </div>
-        <div css={previewWrapperStyle}>
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {markdownText}
-          </ReactMarkdown>
+          <ReactQuill
+            ref={quillRef} // ReactQuill에 ref를 설정
+            value={editorValue}
+            onChange={setEditorValue} // 내용 업데이트
+            placeholder="내용을 작성하세요."
+            modules={editorModules}
+            css={textAreaStyle}
+          />
         </div>
       </div>
 
@@ -208,15 +161,28 @@ const Edit = () => {
         <button
           css={uploadBtnStyle}
           onClick={handlePublish}>
-          <h1 css={uploadTextStyle}>수정</h1>
+          <h1 css={uploadTextStyle}>출간하기</h1>
         </button>
       </div>
+
+      {/* 이미지 파일 input */}
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleImageUpload}
+        style={{ display: 'none' }}
+        id="imageUpload"
+      />
+      <label htmlFor="imageUpload">
+        <button css={uploadBtnStyle}>이미지 업로드</button>
+      </label>
     </div>
   )
 }
 
-export default Edit
+export default Write
 
+// CSS Styles
 const wrapperStyle = css`
   display: flex;
   flex-direction: column;
@@ -292,7 +258,6 @@ const editorWrapperStyle = css`
   background-color: ${color.lightGray};
   color: ${color.black};
   font-size: ${fontSize.xxs};
-  height: calc(100vh - 500px);
 `
 
 const contentWrapperStyle = css`
@@ -313,36 +278,6 @@ const textAreaStyle = css`
 
   ::placeholder {
     color: ${color.lightGray};
-  }
-`
-
-const previewWrapperStyle = css`
-  flex: 1;
-  padding: 20px;
-  background-color: ${color.white};
-  border: 1px solid ${color.lightGray};
-  border-radius: 8px;
-  overflow-y: auto;
-
-  ul,
-  ol {
-    padding-left: 20px;
-  }
-
-  li {
-    list-style-type: disc;
-    font-size: ${fontSize.xxs};
-    color: ${color.black};
-    list-style-position: inside;
-  }
-
-  pre {
-    background-color: ${color.lightGray};
-    padding: 20px;
-    border-radius: 3px;
-    font-size: 14px;
-    white-space: pre-wrap;
-    word-wrap: break-word;
   }
 `
 
@@ -406,7 +341,18 @@ const backTextStyle = css`
 `
 
 const selecboxWrapper = css`
+  margin-left: 50vw;
   display: flex;
-  margin-left: 108vh;
   align-items: center;
 `
+
+const editorModules = {
+  toolbar: [
+    [{ header: '1' }, { header: '2' }, { font: [] }],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['bold', 'italic', 'underline'],
+    ['link', 'image'], // image 삽입 옵션 추가
+    [{ align: [] }],
+    ['clean']
+  ]
+}

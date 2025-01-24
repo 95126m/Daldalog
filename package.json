@@ -14,15 +14,27 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "-": "^0.0.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^6.3.1",
     "@mui/material": "^6.3.1",
     "@types/react-router-dom": "^5.3.3",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "apexcharts": "^4.4.0",
+    "axios": "^1.7.9",
+    "express": "^4.21.2",
     "firebase": "^11.2.0",
+    "firebase-admin": "^13.0.2",
     "react": "^18.3.1",
+    "react-apexcharts": "^1.7.0",
     "react-dom": "^18.3.1",
+    "react-markdown": "^9.0.3",
+    "react-quill": "^2.0.0",
     "react-router-dom": "^7.1.1",
+    "react-syntax-highlighter": "^15.6.1",
+    "remark-gfm": "^4.0.0",
+    "save": "^2.9.0",
     "zustand": "^5.0.3"
   },
   "devDependencies": {

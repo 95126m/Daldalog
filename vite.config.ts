@@ -18,5 +18,8 @@ export default defineConfig({
       { find: '@', replacement: '/src' },
       { find: 'node_modules', replacement: '/node_modules' }
     ]
+  },
+  optimizeDeps: {
+    include: ['firebase']
   }
 })

@@ -53,8 +53,6 @@ const Footer = () => {
       <p>© 2025 DALDALOG All Rights Reserved.</p>
       <nav>
         <span>|</span>
-        <a href="">소개</a>
-        <span>|</span>
         <a href="">이메일 문의</a>
         <span>|</span>
         {isSignin ? (
@@ -78,7 +76,7 @@ const wrapperStyle = css`
   width: 100%;
   height: 150px;
   margin: 0 auto;
-  padding: 0 250px;
+  padding: 0 150px;
   background-color: ${color.charcoal};
   display: flex;
   align-items: center;

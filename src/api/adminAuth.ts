@@ -7,7 +7,6 @@ export const loginWithEmailAndPassword = async (email: string, password: string)
     const userCredential: UserCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Realtime Database에서 관리자 UID 확인
     const db = getDatabase();
     const adminRef = ref(db, "admin/uid");
     const snapshot = await get(adminRef);

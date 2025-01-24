@@ -1,47 +1,173 @@
 /** @jsxImportSource @emotion/react */
-import { css } from '@emotion/react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useState } from 'react';
-import { color } from '@/constants/color';
-import { TabData } from '@/mocks/TabData';
-import { fontSize } from '@/constants/font';
-import Modal from '@/components/Modal';
+import { css } from '@emotion/react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { ref, get, getDatabase } from 'firebase/database'
+import { getAuth, onAuthStateChanged } from 'firebase/auth'
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  deleteDoc
+} from 'firebase/firestore'
+import { db } from '@/api/firebaseApp'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { color } from '@/constants/color'
+import { fontSize } from '@/constants/font'
+import Modal from '@/components/Modal'
+
+interface Post {
+  id: string
+  title: string
+  groupTitle: string
+  content: string
+  date: string
+  image?: string
+}
 
 const Detail = () => {
-  const { id } = useParams(); 
-  const navigate = useNavigate();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { id } = useParams<{ id: string }>()
+  const auth = getAuth()
+  const navigate = useNavigate()
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState<boolean>(false)
+  const [postsData, setPostsData] = useState<Post[]>([])
+  const [currentPost, setCurrentPost] = useState<Post | null>(null)
 
-  const currentIndex = TabData.findIndex((tab) => tab.id === Number(id));
-  const item = TabData[currentIndex];
+  const currentIndex = postsData.findIndex(
+    post => post.id === id && post.groupTitle === currentPost?.groupTitle
+  )
+  const item = postsData[currentIndex]
 
-  const prevItem = TabData[currentIndex - 1];
-  const nextItem = TabData[currentIndex + 1];
+  const prevItem =
+    currentIndex > 0
+      ? postsData
+          .slice(0, currentIndex)
+          .reverse()
+          .find(post => post.groupTitle === currentPost?.groupTitle)
+      : null
+
+  const nextItem =
+    currentIndex < postsData.length - 1
+      ? postsData
+          .slice(currentIndex + 1)
+          .find(post => post.groupTitle === currentPost?.groupTitle)
+      : null
 
   const handlePrev = () => {
     if (prevItem) {
-      navigate(`/detail/${prevItem.id}`);
+      navigate(`/detail/${prevItem.id}`)
     }
-  };
+  }
 
   const handleNext = () => {
     if (nextItem) {
-      navigate(`/detail/${nextItem.id}`);
+      navigate(`/detail/${nextItem.id}`)
     }
-  };
+  }
 
   const handleBack = () => {
-    navigate(`/`);
-  };
+    navigate(`/`)
+  }
 
   const handleEdit = () => {
-    navigate(`/edit/${id}`);
-  };
+    if (currentPost) {
+      navigate(`/edit/${currentPost.id}`)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!id) {
+      alert('삭제할 게시글이 존재하지 않습니다.')
+      return
+    }
+
+    try {
+      const docRef = doc(db, 'posts', id)
+
+      await deleteDoc(docRef)
+
+      alert('게시글이 삭제되었습니다.')
+      navigate('/')
+    } catch (error) {
+      console.error('삭제 실패:', error)
+      alert('삭제에 실패했습니다.')
+    }
+  }
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      const db = getFirestore()
+      const postsCollection = collection(db, 'posts')
+      const querySnapshot = await getDocs(postsCollection)
+      const postsList: Post[] = []
+
+      querySnapshot.forEach(doc => {
+        const post = doc.data()
+        const date = post.date
+          ? new Date(post.date.seconds * 1000).toLocaleString()
+          : ''
+        postsList.push({
+          id: doc.id,
+          title: post.title,
+          groupTitle: post.groupTitle,
+          content: post.content,
+          date: date
+        })
+      })
+      setPostsData(postsList)
+    }
+
+    fetchPosts()
+  }, [])
+
+  useEffect(() => {
+    if (id && postsData.length > 0) {
+      const foundPost = postsData.find(post => post.id === id)
+      setCurrentPost(foundPost || null)
+    }
+  }, [id, postsData])
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const database = getDatabase()
+
+        onAuthStateChanged(auth, async user => {
+          if (user) {
+            const adminRef = ref(database, 'admin/uid')
+            const snapshot = await get(adminRef)
+
+            if (snapshot.exists() && snapshot.val() === user.uid) {
+              setIsAdmin(true)
+            } else {
+              setIsAdmin(false)
+            }
+          } else {
+            setIsAdmin(false)
+          }
+        })
+      } catch (error) {
+        console.error('관리자 확인 오류:', error)
+        setIsAdmin(false)
+      }
+    }
+
+    checkAdmin()
+  }, [auth])
+
+  if (!currentPost) {
+    return <div>게시글을 찾을 수 없습니다.</div>
+  }
 
   return (
     <div css={wrapperStyle}>
       <div className="title-section">
-        <div key={item.id} css={tabItemStyle}>
+        <div
+          key={item.id}
+          css={tabItemStyle}>
           <div className="text-container">
             <h4>{item.groupTitle}</h4>
             <h3>{item.title}</h3>
@@ -50,36 +176,56 @@ const Detail = () => {
         </div>
       </div>
 
-      <div className="button-section" css={btnWrapper}>
-        <button css={deleteBtn} onClick={() => setIsModalOpen(true)}>
-          <p css={deleteText}>삭제</p>
-        </button>
-        <button css={editBtn} onClick={handleEdit}>
-          <p css={editText}>수정</p>
-        </button>
-      </div>
+      {isAdmin && (
+        <div
+          className="button-section"
+          css={btnWrapper}>
+          <button
+            css={deleteBtn}
+            onClick={() => setIsModalOpen(true)}>
+            <p css={deleteText}>삭제</p>
+          </button>
+          <button
+            css={editBtn}
+            onClick={handleEdit}>
+            <p css={editText}>수정</p>
+          </button>
+        </div>
+      )}
 
-      <div className="content-section" css={contentSectionStyle}>
-        <span>{item.content}</span>
+      <div
+        className="content-section"
+        css={contentSectionStyle}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {item.content}
+        </ReactMarkdown>
       </div>
 
       <div css={goMain}>
-        <button css={goMainBtn} onClick={handleBack}>
+        <button
+          css={goMainBtn}
+          onClick={handleBack}>
           메인으로
         </button>
       </div>
 
-      <div className="other-content" css={otherContentWrapper}>
+      <div
+        className="other-content"
+        css={otherContentWrapper}>
         <h1 css={otherContentTitleStyle}>
           {item.groupTitle}
           <span css={otherContentText}>의 다른 글</span>
         </h1>
         <div css={postsWrapper}>
-          <div onClick={handlePrev} css={prevContentWrapper}>
+          <div
+            onClick={handlePrev}
+            css={prevContentWrapper}>
             <p>이전 게시글</p>
             <h4>{prevItem ? prevItem.title : '이전 게시글이 없습니다.'}</h4>
           </div>
-          <div onClick={handleNext} css={nextContentWrapper}>
+          <div
+            onClick={handleNext}
+            css={nextContentWrapper}>
             <p>다음 게시글</p>
             <h4>{nextItem ? nextItem.title : '다음 게시글이 없습니다.'}</h4>
           </div>
@@ -90,19 +236,18 @@ const Detail = () => {
         <Modal
           title="삭제하시겠습니까?"
           description="삭제한 게시글은 복구가 불가능합니다."
-          onConfirm={() => {
-            alert('삭제되었습니다.');
-            setIsModalOpen(false);
+          onConfirm={async () => {
+            await handleDelete()
+            setIsModalOpen(false)
           }}
           onCancel={() => setIsModalOpen(false)}
         />
       )}
     </div>
-  );
-};
+  )
+}
 
-export default Detail;
-
+export default Detail
 
 const wrapperStyle = css`
   display: flex;
@@ -144,7 +289,6 @@ const tabItemStyle = css`
     margin: 0;
     background: transparent;
     border: none;
-    cursor: pointer;
   }
 
   p {
@@ -204,8 +348,8 @@ const editText = css`
 const contentSectionStyle = css`
   justify-content: center;
   align-items: center;
-  text-align: center;
-  padding: 100px 250px;
+  text-align: left;
+  padding: 40px 250px;
   line-height: 1.6;
   font-size: 18px;
   color: ${color.black};
@@ -215,6 +359,30 @@ const contentSectionStyle = css`
   height: auto;
   border: none;
   border-bottom: 1px solid ${color.lightGray};
+
+  ul,
+  ol {
+    padding-left: 0;
+  }
+
+  li {
+    list-style-type: disc;
+    font-size: ${fontSize.xxs};
+    color: ${color.black};
+    list-style-position: inside;
+  }
+
+  pre {
+    display: inline-block;
+    width: 50vw;
+    background-color: ${color.lightGray};
+    padding: 10px;
+    border-radius: 3px;
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    text-align: left;
+  }
 `
 
 /* 메인으로 버튼 */

@@ -1,17 +1,11 @@
 /** @jsxImportSource @emotion/react */
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { css } from '@emotion/react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-import {
-  doc,
-  updateDoc,
-  Timestamp,
-  collection,
-  getDocs
-} from 'firebase/firestore'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { db } from '@/api/firebaseApp'
+import { collection, addDoc, Timestamp } from 'firebase/firestore'
 import { color } from '@/constants/color'
 import { fontSize } from '@/constants/font'
 import FormatBoldIcon from '@mui/icons-material/FormatBold'
@@ -22,28 +16,12 @@ import FormatSizeIcon from '@mui/icons-material/FormatSize'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SelectBox from '@/components/SelectBox'
 
-interface Post {
-  id: string
-  title: string
-  groupTitle: string
-  content: string
-  date: string
-  image?: string
-}
 
-const Edit = () => {
-  const { id } = useParams<{ id: string }>()
-  const [postsData, setPostsData] = useState<Post[]>([])
-  const [currentPost, setCurrentPost] = useState<Post | null>(null)
+const Write = () => {
   const navigate = useNavigate()
   const [title, setTitle] = useState('')
   const [markdownText, setMarkdownText] = useState('')
   const [selectedOption, setSelectedOption] = useState('프로젝트')
-
-  const currentIndex = postsData.findIndex(
-    post => post.id === id && post.groupTitle === currentPost?.groupTitle
-  )
-  const item = postsData[currentIndex]
 
   const handleSelectChange = (value: string) => {
     console.log('선택된 값:', value)
@@ -52,8 +30,7 @@ const Edit = () => {
 
   const options = [
     { label: '프로젝트', value: '프로젝트' },
-    { label: '트러블슈팅', value: '트러블슈팅' },
-    { label: '공지사항', value: '공지사항' }
+    { label: '트러블슈팅', value: '트러블슈팅' }
   ]
 
   const handleBack = () => {
@@ -66,100 +43,36 @@ const Edit = () => {
       return
     }
 
-    if (!id) {
-      console.error('URL에서 id를 가져오지 못했습니다.')
-      return
-    }
-
     try {
-      const postDoc = doc(db, 'posts', id)
-      await updateDoc(postDoc, {
+      const postsCollection = collection(db, 'posts')
+      await addDoc(postsCollection, {
         title,
         groupTitle: selectedOption,
         content: markdownText,
         date: Timestamp.fromDate(new Date())
       })
 
-      alert('게시글이 성공적으로 수정되었습니다!')
+      alert('게시글이 성공적으로 업로드되었습니다!')
       navigate('/')
     } catch (error) {
-      console.error('게시글 수정 실패:', error)
-      alert('게시글 수정 중 오류가 발생했습니다.')
+      console.error('게시글 업로드 실패:', error)
+      alert('게시글 업로드 중 오류가 발생했습니다.')
     }
   }
 
-  useEffect(() => {
-    const fetchPost = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, 'posts'))
-        const postsList: Post[] = []
-
-        querySnapshot.forEach(doc => {
-          const post = doc.data()
-          postsList.push({
-            id: doc.id,
-            title: post.title,
-            groupTitle: post.groupTitle,
-            content: post.content,
-            date: post.date
-              ? new Date(post.date.seconds * 1000).toLocaleString()
-              : ''
-          })
-        })
-
-        setPostsData(postsList)
-
-        const foundPost = postsList.find(post => post.id === id)
-        if (foundPost) {
-          setCurrentPost(foundPost)
-          setTitle(foundPost.title || '')
-          setMarkdownText(foundPost.content || '')
-          setSelectedOption(foundPost.groupTitle || '프로젝트')
-        } else {
-          console.error('해당 게시글을 찾을 수 없습니다.')
-        }
-      } catch (error) {
-        console.error('게시글 가져오기 실패:', error)
-      }
-    }
-
-    fetchPost()
-  }, [id])
-
-  useEffect(() => {
-    if (id && postsData.length > 0) {
-      const foundPost = postsData.find(post => post.id === id)
-      setCurrentPost(foundPost || null)
-    }
-  }, [id, postsData])
-
-  useEffect(() => {
-    if (currentPost) {
-      setTitle(currentPost.title || '')
-      setMarkdownText(currentPost.content || '')
-      setSelectedOption(currentPost.groupTitle || '프로젝트')
-    }
-  }, [currentPost])
-
   return (
     <div css={wrapperStyle}>
-      <div
-        className="title-section"
-        css={titleWrapperStyle}>
-        {item && (
-          <input
-            type="text"
-            value={title || item.title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="제목을 입력하세요."
-            css={titleInputStyle}
-          />
-        )}
+      <div className="title-section" css={titleWrapperStyle}>
+        <input
+          type="text"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="제목을 입력하세요."
+          css={titleInputStyle}
+        />
       </div>
 
-      <div
-        className="icon-section"
-        css={iconSectionStyle}>
+      <div className="icon-section" css={iconSectionStyle}>
         <FormatSizeIcon css={iconStyle} />
         <FormatBoldIcon css={iconStyle} />
         <FormatUnderlinedIcon css={iconStyle} />
@@ -170,14 +83,12 @@ const Edit = () => {
 
       <div css={editorWrapperStyle}>
         <div css={contentWrapperStyle}>
-          {item && (
-            <textarea
-              value={markdownText || item.content}
-              onChange={e => setMarkdownText(e.target.value)}
-              placeholder="내용을 작성하세요."
-              css={textAreaStyle}
-            />
-          )}
+          <textarea
+            value={markdownText}
+            onChange={e => setMarkdownText(e.target.value)}
+            placeholder="내용을 작성하세요."
+            css={textAreaStyle}
+          />
         </div>
         <div css={previewWrapperStyle}>
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -186,14 +97,10 @@ const Edit = () => {
         </div>
       </div>
 
-      <div
-        className="button-section"
-        css={buttonWrapperStyle}>
+      <div className="button-section" css={buttonWrapperStyle}>
         <div css={backBtnWrapper}>
           <ArrowBackIcon css={backIconStyle} />
-          <button
-            css={backBtnStyle}
-            onClick={handleBack}>
+          <button css={backBtnStyle} onClick={handleBack}>
             <h1 css={backTextStyle}>나가기</h1>
           </button>
         </div>
@@ -205,18 +112,17 @@ const Edit = () => {
             onChange={handleSelectChange}
           />
         </div>
-        <button
-          css={uploadBtnStyle}
-          onClick={handlePublish}>
-          <h1 css={uploadTextStyle}>수정</h1>
+        <button css={uploadBtnStyle} onClick={handlePublish}>
+          <h1 css={uploadTextStyle}>출간하기</h1>
         </button>
       </div>
     </div>
   )
 }
 
-export default Edit
+export default Write
 
+// CSS Styles
 const wrapperStyle = css`
   display: flex;
   flex-direction: column;
@@ -292,7 +198,6 @@ const editorWrapperStyle = css`
   background-color: ${color.lightGray};
   color: ${color.black};
   font-size: ${fontSize.xxs};
-  height: calc(100vh - 500px);
 `
 
 const contentWrapperStyle = css`
@@ -323,27 +228,6 @@ const previewWrapperStyle = css`
   border: 1px solid ${color.lightGray};
   border-radius: 8px;
   overflow-y: auto;
-
-  ul,
-  ol {
-    padding-left: 20px;
-  }
-
-  li {
-    list-style-type: disc;
-    font-size: ${fontSize.xxs};
-    color: ${color.black};
-    list-style-position: inside;
-  }
-
-  pre {
-    background-color: ${color.lightGray};
-    padding: 20px;
-    border-radius: 3px;
-    font-size: 14px;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-  }
 `
 
 /* 버튼 섹션 */
@@ -406,7 +290,7 @@ const backTextStyle = css`
 `
 
 const selecboxWrapper = css`
+  margin-left: 50vw;
   display: flex;
-  margin-left: 108vh;
   align-items: center;
-`
+`;
