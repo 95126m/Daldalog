@@ -51,12 +51,12 @@ const ApexChart: React.FC = () => {
             ]
           },
           {
-            x: 'Feat: Search',
+            x: 'Feat: Search, Todos',
             y: [
               new Date('2025-01-24').getTime(),
               new Date('2025-01-25').getTime()
             ]
-          },
+          }
         ]
       }
     ],
