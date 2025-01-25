@@ -5,6 +5,7 @@ import Write from '@/pages/Write';
 import Detail from '@/pages/Detail';
 import Edit from '@/pages/Edit';
 import Layout from '@/layouts/Layout';
+import Search from '@/components/Search'
 
 const router = createBrowserRouter([
   {
@@ -16,6 +17,7 @@ const router = createBrowserRouter([
       { path: 'write', element: <Write /> },
       { path: 'detail/:id', element: <Detail /> }, 
       { path: 'edit/:id', element: <Edit /> }, 
+      { path: 'search', element: <Search /> }, 
     ],
   },
 ]);
