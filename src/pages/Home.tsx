@@ -1,103 +1,107 @@
 /** @jsxImportSource @emotion/react */
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ref, get, getDatabase } from 'firebase/database'
-import { getAuth, onAuthStateChanged } from 'firebase/auth'
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ref, get, getDatabase } from 'firebase/database';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import {
   getFirestore,
   collection,
   getDocs,
   query,
   orderBy
-} from 'firebase/firestore'
-import { css } from '@emotion/react'
-import { color } from '@/constants/color'
-import { fontSize } from '@/constants/font'
-import testImage from '@/assets/test-image.jpg'
-import sample from '@/assets/sample2.jpg'
-import EditIcon from '@mui/icons-material/Edit'
-import TabButton from '@/components/TabButton'
-import Pagination from '@/components/Pagination'
-import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-import NotesIcon from '@mui/icons-material/Notes'
-import ManageSearchIcon from '@mui/icons-material/ManageSearch'
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
-import ApexChart from '@/components/ApexChart'
+} from 'firebase/firestore';
+import { css } from '@emotion/react';
+import { color } from '@/constants/color';
+import { fontSize } from '@/constants/font';
+import sample from '@/assets/sample2.jpg';
+import EditIcon from '@mui/icons-material/Edit';
+import TabButton from '@/components/TabButton';
+import Pagination from '@/components/Pagination';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import NotesIcon from '@mui/icons-material/Notes';
+import ManageSearchIcon from '@mui/icons-material/ManageSearch';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ApexChart from '@/components/ApexChart';
+import ProfileImage from '@/assets/profile.jpg';
+import Loading from '@/components/Loading';
 
 interface Post {
-  id: string
-  title: string
-  groupTitle: string
-  content: string
-  date: Date | string
-  image?: string
+  id: string;
+  title: string;
+  groupTitle: string;
+  content: string;
+  date: Date | string;
+  image?: string;
 }
 
 const Home = () => {
-  const navigate = useNavigate()
-  const auth = getAuth()
-  const firestore = getFirestore()
+  const navigate = useNavigate();
+  const auth = getAuth();
+  const firestore = getFirestore();
 
-  const [postsData, setPostsData] = useState<Post[]>([])
-  const [activeGroup, setActiveGroup] = useState<string>('전체')
-  const [currentPage, setCurrentPage] = useState<number>(0)
-  const [isAdmin, setIsAdmin] = useState<boolean>(false)
-  const [isOpen, setIsOpen] = useState<boolean>(false)
-  const introduceContentId = 'Bt0ABnmTw2pq2JPn0ASx'
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [postsData, setPostsData] = useState<Post[]>([]);
+  const [activeGroup, setActiveGroup] = useState<string>('전체');
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const introduceContentId = 'Bt0ABnmTw2pq2JPn0ASx';
+  const profileContentId = 'atAED0b7KmPGIgkZjerD';
 
   const handleWrite = () => {
-    navigate('/write')
-  }
+    navigate('/write');
+  };
 
   const handleDetail = (id: string) => {
-    navigate(`/detail/${id}`)
-  }
+    navigate(`/detail/${id}`);
+  };
 
   const handleSearch = () => {
-    setIsOpen(prev => !prev)
-  }
+    navigate(`/search`);
+  };
 
   const handleContent = (text: string, length: number) => {
     if (text.length > length) {
-      return text.slice(0, length) + '...'
+      return text.slice(0, length) + '...';
     }
-    return text
-  }
+    return text;
+  };
 
   useEffect(() => {
     const checkAdmin = async () => {
       try {
-        const database = getDatabase()
+        const database = getDatabase();
 
         onAuthStateChanged(auth, async user => {
           if (user) {
-            const adminRef = ref(database, 'admin/uid')
-            const snapshot = await get(adminRef)
+            const adminRef = ref(database, 'admin/uid');
+            const snapshot = await get(adminRef);
 
             if (snapshot.exists() && snapshot.val() === user.uid) {
-              setIsAdmin(true)
+              setIsAdmin(true);
             } else {
-              setIsAdmin(false)
+              setIsAdmin(false);
             }
           } else {
-            setIsAdmin(false)
+            setIsAdmin(false);
           }
-        })
+        });
       } catch (error) {
-        console.error('관리자 확인 오류:', error)
-        setIsAdmin(false)
+        console.error('관리자 확인 오류:', error);
+        setIsAdmin(false);
       }
-    }
+    };
 
-    checkAdmin()
-  }, [auth])
+    checkAdmin();
+  }, [auth]);
 
   useEffect(() => {
     const fetchPosts = async () => {
+      setIsLoading(true);
+
       try {
-        const postsCollection = collection(firestore, 'posts')
-        const postsQuery = query(postsCollection, orderBy('date', 'desc'))
-        const snapshot = await getDocs(postsQuery)
+        const postsCollection = collection(firestore, 'posts');
+        const postsQuery = query(postsCollection, orderBy('date', 'desc'));
+        const snapshot = await getDocs(postsQuery);
 
         if (!snapshot.empty) {
           const postsArray: Post[] = snapshot.docs.map(doc => ({
@@ -107,25 +111,27 @@ const Home = () => {
             content: doc.data().content,
             date: doc.data().date.toDate(),
             image: doc.data().image || ''
-          }))
+          }));
 
-          setPostsData(postsArray)
+          setPostsData(postsArray);
         } else {
-          console.log('Firestore 데이터가 없습니다.')
+          console.log('Firestore 데이터가 없습니다.');
         }
       } catch (error) {
-        console.error('Firestore에서 데이터 가져오기 실패:', error)
+        console.error('Firestore에서 데이터 가져오기 실패:', error);
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchPosts()
-  }, [firestore])
+    fetchPosts();
+  }, [firestore]);
 
-  const ITEMS_PER_PAGE = 5
+  const ITEMS_PER_PAGE = 5;
   const allGroups = [
     '전체',
     ...Array.from(new Set(postsData.map(post => post.groupTitle)))
-  ]
+  ];
 
   const filteredData =
     activeGroup === '전체'
@@ -134,14 +140,14 @@ const Home = () => {
           post =>
             post.groupTitle.trim().toLowerCase() ===
             activeGroup.trim().toLowerCase()
-        )
+        );
 
-  const totalPage = Math.ceil(filteredData.length / ITEMS_PER_PAGE)
-  const startIndex = currentPage * ITEMS_PER_PAGE
+  const totalPage = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const startIndex = currentPage * ITEMS_PER_PAGE;
   const displayedItems = filteredData.slice(
     startIndex,
     startIndex + ITEMS_PER_PAGE
-  )
+  );
 
   return (
     <div css={wrapperStyle}>
@@ -175,7 +181,7 @@ const Home = () => {
           className="content"
           css={secondSectionContentStyle}>
           <img
-            src={testImage}
+            src={ProfileImage}
             alt="이미지"
             css={secondSectionImgStyle}
           />
@@ -188,7 +194,9 @@ const Home = () => {
               <br />
               꾸준하게 공부하며 성장하는 모습 보여드리겠습니다! 😸
             </p>
-            <button>Read More</button>
+            <button onClick={() => handleDetail(profileContentId)}>
+              Read More
+            </button>
           </div>
         </div>
       </section>
@@ -210,27 +218,42 @@ const Home = () => {
                 />
               ))}
             </div>
-            <div css={tabContentStyle}>
-              {displayedItems.map(item => (
-                <div
-                  key={item.id}
-                  css={tabItemStyle}>
-                  <img
-                    src={item.image || sample}
-                    alt={item.title}
-                  />
-                  <div className="text-container">
-                    <h3 onClick={() => handleDetail(item.id)}>{item.title}</h3>
-                    <p>
-                      {item.date instanceof Date
-                        ? item.date.toLocaleString()
-                        : item.date}
-                    </p>
-
-                    <span>{handleContent(item.content, 100)}</span>
+            <div
+              css={[
+                tabContentStyle,
+                isLoading &&
+                  css`
+                    min-height: 600px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  `
+              ]}>
+              {isLoading ? (
+                <Loading />
+              ) : (
+                displayedItems.map(item => (
+                  <div
+                    key={item.id}
+                    css={tabItemStyle}>
+                    <img
+                      src={item.image || sample}
+                      alt={item.title}
+                    />
+                    <div className="text-container">
+                      <h3 onClick={() => handleDetail(item.id)}>
+                        {item.title}
+                      </h3>
+                      <p>
+                        {item.date instanceof Date
+                          ? item.date.toLocaleString()
+                          : item.date}
+                      </p>
+                      <span>{handleContent(item.content, 100)}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -264,28 +287,12 @@ const Home = () => {
             <div css={fifthTitleWrapper}>
               <ManageSearchIcon css={fifthContentIcon} />
               <h1 css={fifthTitle}>SEARCH</h1>
-              <KeyboardArrowDownIcon
-                css={[fifthContentOpenIcon, isOpen && rotatedIcon]}
+              <ArrowForwardIcon
+                css={arrowIcon}
                 onClick={handleSearch}
               />
             </div>
-            {isOpen && (
-              <div
-                css={[
-                  searchInputWrapper,
-                  isOpen &&
-                    css`
-                      max-height: 150px;
-                    `
-                ]}>
-                <input
-                  type="text"
-                  css={searchInput}
-                  placeholder="검색어를 입력하세요."
-                />
-                <button css={searchButton}>Search</button>
-              </div>
-            )}
+        
           </div>
         </div>
       </section>
@@ -296,10 +303,10 @@ const Home = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;
 
 const headerHeight = 70
 
@@ -668,16 +675,16 @@ const fifthTitle = css`
 const fifthSectionContentStyle = css`
   width: 100%;
 `
-const fifthContentOpenIcon = css`
+const arrowIcon = css`
   color: ${color.black};
   font-size: 30px;
   margin-left: auto;
   cursor: pointer;
-  transition: transform 0.3s ease-in-out;
-`
+  transition: color 0.3s ease-in-out;
 
-const rotatedIcon = css`
-  transform: rotate(180deg);
+  &:hover {
+    color: ${color.yellow};
+  }
 `
 
 const fifthSectionTextStyle = css`
@@ -686,51 +693,6 @@ const fifthSectionTextStyle = css`
   align-items: left;
   justify-content: center;
   color: ${color.black};
-`
-
-const searchInputWrapper = css`
-  padding: 40px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.5s ease-in-out;
-
-  &.open {
-    max-height: 200px;
-  }
-`
-
-const searchInput = css`
-  width: 50%;
-  height: 60px;
-  border: 1px solid ${color.gray};
-  padding: 0 10px;
-  font-size: ${fontSize.xxs};
-  transition: border 0.3s ease-in-out;
-
-  :focus {
-    border: 1px solid ${color.darkYellow};
-    outline: none;
-  }
-`
-
-const searchButton = css`
-  width: 250px;
-  height: 60px;
-  padding: 0 20px;
-  font-size: ${fontSize.xxs};
-  color: ${color.white};
-  background-color: ${color.gray};
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.5s ease-in-out;
-
-  &:hover {
-    background-color: ${color.yellow};
-  }
 `
 
 /* 글쓰기 아이콘 영역*/
@@ -748,6 +710,7 @@ const writeIconStyle = css`
   border-radius: 50%;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   cursor: pointer;
+  z-index: 11;
   transition:
     background-color 0.8s ease,
     color 0.8s ease,

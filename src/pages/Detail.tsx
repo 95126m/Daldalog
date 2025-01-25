@@ -349,7 +349,7 @@ const contentSectionStyle = css`
   justify-content: center;
   align-items: center;
   text-align: left;
-  padding: 40px 250px;
+  padding: 40px 150px;
   line-height: 1.6;
   font-size: 18px;
   color: ${color.black};

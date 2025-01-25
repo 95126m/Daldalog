@@ -3,5 +3,6 @@ export const path = {
   signin: '/signin',
   write: '/write',
   detail: '/detail/:id',
-  edit: '/edit/:id'
+  edit: '/edit/:id',
+  search: '/search'
 }

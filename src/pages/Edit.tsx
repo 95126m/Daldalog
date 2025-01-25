@@ -53,7 +53,8 @@ const Edit = () => {
   const options = [
     { label: '프로젝트', value: '프로젝트' },
     { label: '트러블슈팅', value: '트러블슈팅' },
-    { label: '공지사항', value: '공지사항' }
+    { label: '공지사항', value: '공지사항' },
+    { label: '스몰토크', value: '스몰토크' }
   ]
 
   const handleBack = () => {
@@ -229,7 +230,7 @@ const wrapperStyle = css`
 
 /* 제목 영역 */
 const titleWrapperStyle = css`
-  padding: 0 250px;
+  padding: 0 150px;
   background-color: ${color.lightGray};
 `
 
@@ -252,7 +253,7 @@ const titleInputStyle = css`
 const iconSectionStyle = css`
   display: flex;
   width: 100%;
-  max-width: calc(100% - 500px);
+  max-width: calc(100% - 300px);
   margin: 0 auto;
   border: none;
   background-color: ${color.white};
@@ -288,7 +289,7 @@ const editorWrapperStyle = css`
   display: flex;
   flex-direction: row;
   flex: 1;
-  padding: 0 250px;
+  padding: 0 150px;
   background-color: ${color.lightGray};
   color: ${color.black};
   font-size: ${fontSize.xxs};
@@ -350,7 +351,7 @@ const previewWrapperStyle = css`
 const buttonWrapperStyle = css`
   border-top: 1px solid ${color.lightGray};
   width: 100%;
-  max-width: calc(100% - 500px);
+  max-width: calc(100% - 300px);
   margin: 0 auto;
   padding: 10px 20px;
   background-color: ${color.white};
@@ -407,6 +408,6 @@ const backTextStyle = css`
 
 const selecboxWrapper = css`
   display: flex;
-  margin-left: 108vh;
+  margin-left: 63vw;
   align-items: center;
 `
