@@ -1,107 +1,185 @@
 /** @jsxImportSource @emotion/react */
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ref, get, getDatabase } from 'firebase/database';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { ref, get, getDatabase, push, remove } from 'firebase/database'
+import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import {
   getFirestore,
   collection,
   getDocs,
   query,
   orderBy
-} from 'firebase/firestore';
-import { css } from '@emotion/react';
-import { color } from '@/constants/color';
-import { fontSize } from '@/constants/font';
-import sample from '@/assets/sample2.jpg';
-import EditIcon from '@mui/icons-material/Edit';
-import TabButton from '@/components/TabButton';
-import Pagination from '@/components/Pagination';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import NotesIcon from '@mui/icons-material/Notes';
-import ManageSearchIcon from '@mui/icons-material/ManageSearch';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import ApexChart from '@/components/ApexChart';
-import ProfileImage from '@/assets/profile.jpg';
-import Loading from '@/components/Loading';
+} from 'firebase/firestore'
+import { onValue } from 'firebase/database'
+
+import { css } from '@emotion/react'
+import { color } from '@/constants/color'
+import { fontSize } from '@/constants/font'
+import sample from '@/assets/sample2.jpg'
+import EditIcon from '@mui/icons-material/Edit'
+import TabButton from '@/components/TabButton'
+import Pagination from '@/components/Pagination'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import NotesIcon from '@mui/icons-material/Notes'
+import ManageSearchIcon from '@mui/icons-material/ManageSearch'
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import ApexChart from '@/components/ApexChart'
+import ProfileImage from '@/assets/profile.jpg'
+import Loading from '@/components/Loading'
+import AddIcon from '@mui/icons-material/Add'
+import DoneIcon from '@mui/icons-material/Done'
+import RemoveIcon from '@mui/icons-material/Remove'
 
 interface Post {
-  id: string;
-  title: string;
-  groupTitle: string;
-  content: string;
-  date: Date | string;
-  image?: string;
+  id: string
+  title: string
+  groupTitle: string
+  content: string
+  date: Date | string
+  image?: string
+}
+
+interface Todos {
+  id: string
+  value: string
 }
 
 const Home = () => {
-  const navigate = useNavigate();
-  const auth = getAuth();
-  const firestore = getFirestore();
+  const navigate = useNavigate()
+  const auth = getAuth()
+  const firestore = getFirestore()
+  const [todos, setTodos] = useState('')
+  const [todosItem, setTodosItem] = useState<Todos[]>([])
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [postsData, setPostsData] = useState<Post[]>([]);
-  const [activeGroup, setActiveGroup] = useState<string>('전체');
-  const [currentPage, setCurrentPage] = useState<number>(0);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const introduceContentId = 'Bt0ABnmTw2pq2JPn0ASx';
-  const profileContentId = 'atAED0b7KmPGIgkZjerD';
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [postsData, setPostsData] = useState<Post[]>([])
+  const [activeGroup, setActiveGroup] = useState<string>('전체')
+  const [currentPage, setCurrentPage] = useState<number>(0)
+  const [isAdmin, setIsAdmin] = useState<boolean>(false)
+  const introduceContentId = 'Bt0ABnmTw2pq2JPn0ASx'
+  const profileContentId = 'atAED0b7KmPGIgkZjerD'
+
+  const handleAddTodosChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setTodos(event.target.value)
+  }
+
+  const handleAddTodos = async () => {
+    if (todos.trim() === '') {
+      alert('할 일을 입력해주세요.')
+      return
+    }
+
+    try {
+      const database = getDatabase()
+      const todosRef = ref(database, 'todos')
+      await push(todosRef, todos)
+      setTodos('')
+    } catch (error) {
+      console.error('Firebase에 데이터 추가 실패:', error)
+      alert('데이터 추가 중 문제가 발생했습니다.')
+    }
+  }
+
+  const handleDeleteTodos = async (id: string) => {
+    try {
+      const database = getDatabase()
+      const todoRef = ref(database, `todos/${id}`)
+      await remove(todoRef)
+      setTodosItem(prevTodos => prevTodos.filter(todo => todo.id !== id))
+    } catch (error) {
+      console.error('할 일 삭제 실패:', error)
+      alert('할 일을 삭제하는 중 문제가 발생했습니다.')
+    }
+  }
 
   const handleWrite = () => {
-    navigate('/write');
-  };
+    navigate('/write')
+  }
 
   const handleDetail = (id: string) => {
-    navigate(`/detail/${id}`);
-  };
+    navigate(`/detail/${id}`)
+  }
 
   const handleSearch = () => {
-    navigate(`/search`);
-  };
+    navigate(`/search`)
+  }
 
   const handleContent = (text: string, length: number) => {
     if (text.length > length) {
-      return text.slice(0, length) + '...';
+      return text.slice(0, length) + '...'
     }
-    return text;
-  };
+    return text
+  }
 
   useEffect(() => {
     const checkAdmin = async () => {
       try {
-        const database = getDatabase();
+        const database = getDatabase()
 
         onAuthStateChanged(auth, async user => {
           if (user) {
-            const adminRef = ref(database, 'admin/uid');
-            const snapshot = await get(adminRef);
+            const adminRef = ref(database, 'admin/uid')
+            const snapshot = await get(adminRef)
 
             if (snapshot.exists() && snapshot.val() === user.uid) {
-              setIsAdmin(true);
+              setIsAdmin(true)
             } else {
-              setIsAdmin(false);
+              setIsAdmin(false)
             }
           } else {
-            setIsAdmin(false);
+            setIsAdmin(false)
           }
-        });
+        })
       } catch (error) {
-        console.error('관리자 확인 오류:', error);
-        setIsAdmin(false);
+        console.error('관리자 확인 오류:', error)
+        setIsAdmin(false)
       }
-    };
+    }
 
-    checkAdmin();
-  }, [auth]);
+    checkAdmin()
+  }, [auth])
+
+  useEffect(() => {
+    localStorage.setItem('todos', JSON.stringify(todosItem))
+  }, [todosItem])
+
+  useEffect(() => {
+    const savedTodos = localStorage.getItem('todos')
+    if (savedTodos) {
+      setTodosItem(JSON.parse(savedTodos))
+    }
+  }, [])
+
+  useEffect(() => {
+    const database = getDatabase()
+    const todosRef = ref(database, 'todos')
+
+    const unsubscribe = onValue(todosRef, snapshot => {
+      if (snapshot.exists()) {
+        const data: Record<string, string> = snapshot.val()
+        const todosArray: Todos[] = Object.entries(data).map(
+          ([key, value]) => ({
+            id: key,
+            value
+          })
+        )
+        setTodosItem(todosArray)
+      } else {
+        setTodosItem([])
+      }
+    })
+
+    return () => unsubscribe()
+  }, [])
 
   useEffect(() => {
     const fetchPosts = async () => {
-      setIsLoading(true);
+      setIsLoading(true)
 
       try {
-        const postsCollection = collection(firestore, 'posts');
-        const postsQuery = query(postsCollection, orderBy('date', 'desc'));
-        const snapshot = await getDocs(postsQuery);
+        const postsCollection = collection(firestore, 'posts')
+        const postsQuery = query(postsCollection, orderBy('date', 'desc'))
+        const snapshot = await getDocs(postsQuery)
 
         if (!snapshot.empty) {
           const postsArray: Post[] = snapshot.docs.map(doc => ({
@@ -111,27 +189,27 @@ const Home = () => {
             content: doc.data().content,
             date: doc.data().date.toDate(),
             image: doc.data().image || ''
-          }));
+          }))
 
-          setPostsData(postsArray);
+          setPostsData(postsArray)
         } else {
-          console.log('Firestore 데이터가 없습니다.');
+          console.log('Firestore 데이터가 없습니다.')
         }
       } catch (error) {
-        console.error('Firestore에서 데이터 가져오기 실패:', error);
+        console.error('Firestore에서 데이터 가져오기 실패:', error)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
+    }
 
-    fetchPosts();
-  }, [firestore]);
+    fetchPosts()
+  }, [firestore])
 
-  const ITEMS_PER_PAGE = 5;
+  const ITEMS_PER_PAGE = 5
   const allGroups = [
     '전체',
     ...Array.from(new Set(postsData.map(post => post.groupTitle)))
-  ];
+  ]
 
   const filteredData =
     activeGroup === '전체'
@@ -140,14 +218,14 @@ const Home = () => {
           post =>
             post.groupTitle.trim().toLowerCase() ===
             activeGroup.trim().toLowerCase()
-        );
+        )
 
-  const totalPage = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-  const startIndex = currentPage * ITEMS_PER_PAGE;
+  const totalPage = Math.ceil(filteredData.length / ITEMS_PER_PAGE)
+  const startIndex = currentPage * ITEMS_PER_PAGE
   const displayedItems = filteredData.slice(
     startIndex,
     startIndex + ITEMS_PER_PAGE
-  );
+  )
 
   return (
     <div css={wrapperStyle}>
@@ -197,6 +275,50 @@ const Home = () => {
             <button onClick={() => handleDetail(profileContentId)}>
               Read More
             </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="sixth">
+        <div
+          className="content"
+          css={sixthSectionContentStyle}>
+          <div
+            className="title-section"
+            css={titleWrapper}>
+            <DoneIcon css={checkIcon} />
+            <h1 css={todosTitle}>TODOS</h1>
+          </div>
+          <div css={sixthSectionTextStyle}>
+            {isAdmin && (
+              <div css={sixthTitleWrapper}>
+                <input
+                  type="text"
+                  onChange={handleAddTodosChange}
+                  value={todos}
+                  css={sixthInput}
+                />
+                <AddIcon
+                  css={sixthBtn}
+                  onClick={handleAddTodos}
+                />
+              </div>
+            )}
+            <ul css={todoListStyle}>
+              {todosItem.map(item => (
+                <li
+                  key={item.id}
+                  css={todoItemStyle}>
+                  <span>{item.value}</span>
+                  {isAdmin && (
+                    <RemoveIcon
+                      css={deleteIcon}
+                      onClick={() => handleDeleteTodos(item.id)}
+                    />
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
@@ -292,7 +414,6 @@ const Home = () => {
                 onClick={handleSearch}
               />
             </div>
-        
           </div>
         </div>
       </section>
@@ -303,10 +424,10 @@ const Home = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default Home;
+export default Home
 
 const headerHeight = 70
 
@@ -322,9 +443,10 @@ const wrapperStyle = css`
   grid-template-areas:
     'first first'
     'third second'
+    '. sixth'
     'fourth fourth'
     'fifth fifth';
-  gap: 100px;
+  gap: 60px;
 
   padding: 0;
 
@@ -346,9 +468,18 @@ const wrapperStyle = css`
 
   section.second {
     grid-area: second;
-    padding: 0 160px 0 30px;
+    padding: 0 30px;
     border: none;
     border-left: 1px solid ${color.lightGray};
+    margin-right: 150px;
+  }
+
+  section.sixth {
+    grid-area: sixth;
+    padding: 0 30px;
+    border: 1px solid ${color.lightGray};
+    margin-right: 150px;
+    min-height: 100px;
   }
 
   section.third {
@@ -693,6 +824,115 @@ const fifthSectionTextStyle = css`
   align-items: left;
   justify-content: center;
   color: ${color.black};
+`
+
+/* 여섯번째 영역*/
+const sixthTitleWrapper = css`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  svg {
+    font-size: 24px;
+    vertical-align: middle;
+  }
+
+  h1 {
+    margin: 0;
+    line-height: 1;
+  }
+`
+
+const sixthSectionContentStyle = css`
+  width: 100%;
+`
+
+const titleWrapper = css`
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  gap: 4px;
+  padding: 0;
+  margin-top: 20px;
+  height: auto;
+`
+
+const checkIcon = css`
+  color: ${color.black};
+  font-size: ${fontSize.xs};
+`
+
+const todosTitle = css`
+  color: ${color.black};
+  font-size: ${fontSize.xs};
+  line-height: 1.2;
+  margin: 0;
+`
+
+const sixthSectionTextStyle = css`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 20px;
+
+  .input-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+`
+
+const sixthInput = css`
+  width: 220px;
+  height: 40px;
+  background-color: ${color.lightYellow};
+  border: none;
+  padding: 0 10px;
+  font-size: ${fontSize.xxs};
+  color: ${color.black};
+  outline: none;
+  transition: background-color 0.5s ease-in-out;
+
+  &:focus {
+    background-color: ${color.yellow};
+  }
+`
+
+const sixthBtn = css`
+  width: 24px;
+  height: auto;
+  color: ${color.black};
+  cursor: pointer;
+  transition: color 0.3s ease-in-out;
+
+  &:hover {
+    color: ${color.yellow};
+  }
+`
+
+const todoListStyle = css`
+  list-style: none;
+  margin: 0;
+  margin-bottom: 10px;
+  padding: 0;
+  width: 100%;
+`
+
+const todoItemStyle = css`
+  background-color: transparent;
+  padding: 10px;
+  font-size: ${fontSize.xxxs};
+  color: ${color.black};
+  text-align: left;
+`
+
+const deleteIcon = css`
+  margin-left: 10px;
+  width: 12px;
+  height: auto;
+  color: ${color.red};
+  cursor: pointer;
 `
 
 /* 글쓰기 아이콘 영역*/
