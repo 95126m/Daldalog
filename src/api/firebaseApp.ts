@@ -8,7 +8,7 @@ const firebaseConfig = {
   authDomain: 'daldalog.firebaseapp.com',
   databaseURL: 'https://daldalog-default-rtdb.firebaseio.com',
   projectId: 'daldalog',
-  storageBucket: 'daldalog.appspot.com',
+  storageBucket: 'daldalog.firebasestorage.app',
   messagingSenderId: '945032510408',
   appId: '1:945032510408:web:b780068e38e40386d79efd',
   measurementId: 'G-96E83EW0Y7'

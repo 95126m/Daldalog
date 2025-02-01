@@ -37,6 +37,7 @@ interface Post {
   content: string
   date: Date | string
   image?: string
+  thumbnail?: string
 }
 
 interface Todos {
@@ -56,8 +57,8 @@ const Home = () => {
   const [activeGroup, setActiveGroup] = useState<string>('전체')
   const [currentPage, setCurrentPage] = useState<number>(0)
   const [isAdmin, setIsAdmin] = useState<boolean>(false)
-  const introduceContentId = 'Bt0ABnmTw2pq2JPn0ASx'
-  const profileContentId = 'atAED0b7KmPGIgkZjerD'
+  const introduceContentId = 'HGW5oBEVHa4FmEV4iWKJ'
+  const profileContentId = 'cL3VjyK9ML1AwQ3dobDO'
 
   const handleAddTodosChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTodos(event.target.value)
@@ -178,18 +179,33 @@ const Home = () => {
 
       try {
         const postsCollection = collection(firestore, 'posts')
-        const postsQuery = query(postsCollection, orderBy('date', 'desc'))
+        const postsQuery = query(postsCollection, orderBy('createdAt', 'desc'))
         const snapshot = await getDocs(postsQuery)
 
         if (!snapshot.empty) {
-          const postsArray: Post[] = snapshot.docs.map(doc => ({
-            id: doc.id,
-            title: doc.data().title,
-            groupTitle: doc.data().groupTitle,
-            content: doc.data().content,
-            date: doc.data().date.toDate(),
-            image: doc.data().image || ''
-          }))
+          const postsArray: Post[] = snapshot.docs.map(doc => {
+            const postData = doc.data()
+            console.log("🔥 Firestore에서 가져온 데이터:", postData);
+
+            return {
+              id: doc.id,
+              title: postData.title,
+              groupTitle: postData.groupTitle,
+              content: postData.content,
+              date: postData.date?.seconds
+                ? new Date(postData.date.seconds * 1000)
+                    .toISOString()
+                    .split('T')[0]
+                : postData.date || '',
+
+                createdAt: postData.createdAt?.seconds
+                ? new Date(postData.createdAt.seconds * 1000).toLocaleString()
+                : new Date().toLocaleString(),
+                
+              image: postData.image || '',
+              thumbnail: postData.thumbnail || ''
+            }
+          })
 
           setPostsData(postsArray)
         } else {
@@ -359,7 +375,7 @@ const Home = () => {
                     key={item.id}
                     css={tabItemStyle}>
                     <img
-                      src={item.image || sample}
+                      src={item.thumbnail ? item.thumbnail : sample}
                       alt={item.title}
                     />
                     <div className="text-container">

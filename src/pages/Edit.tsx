@@ -9,16 +9,15 @@ import {
   collection,
   getDocs
 } from 'firebase/firestore'
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { db } from '@/api/firebaseApp'
+import { db, storage } from '@/api/firebaseApp'
 import { color } from '@/constants/color'
 import { fontSize } from '@/constants/font'
-import FormatBoldIcon from '@mui/icons-material/FormatBold'
+import ImageIcon from '@mui/icons-material/Image'
 import AttachFileIcon from '@mui/icons-material/AttachFile'
-import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined'
 import FormatColorTextIcon from '@mui/icons-material/FormatColorText'
-import FormatSizeIcon from '@mui/icons-material/FormatSize'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SelectBox from '@/components/SelectBox'
 
@@ -28,10 +27,11 @@ interface Post {
   groupTitle: string
   content: string
   date: string
-  image?: string
+  thumbnail?: string
 }
 
 const Edit = () => {
+  const [thumbnail, setThumbnail] = useState<File | null>(null)
   const { id } = useParams<{ id: string }>()
   const [postsData, setPostsData] = useState<Post[]>([])
   const [currentPost, setCurrentPost] = useState<Post | null>(null)
@@ -40,10 +40,8 @@ const Edit = () => {
   const [markdownText, setMarkdownText] = useState('')
   const [selectedOption, setSelectedOption] = useState('프로젝트')
 
-  const currentIndex = postsData.findIndex(
-    post => post.id === id && post.groupTitle === currentPost?.groupTitle
-  )
-  const item = postsData[currentIndex]
+  const currentIndex = postsData.findIndex(post => post.id === id)
+  const item = currentIndex !== -1 ? postsData[currentIndex] : null
 
   const handleSelectChange = (value: string) => {
     console.log('선택된 값:', value)
@@ -61,6 +59,43 @@ const Edit = () => {
     navigate(-1)
   }
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setThumbnail(event.target.files[0])
+    }
+  }
+
+  const handleImageFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (event.target.files && event.target.files[0]) {
+      const imageRef = ref(storage, `posts/${event.target.files[0].name}`)
+      const uploadTask = uploadBytesResumable(imageRef, event.target.files[0])
+
+      uploadTask.on(
+        'state_changed',
+        snapshot => {
+          console.log(
+            `이미지 업로드 진행률: ${(snapshot.bytesTransferred / snapshot.totalBytes) * 100}%`
+          )
+        },
+        error => {
+          console.error('이미지 업로드 실패:', error)
+        },
+        async () => {
+          const imageUrl = await getDownloadURL(uploadTask.snapshot.ref)
+          console.log('업로드된 이미지 URL:', imageUrl)
+
+          setTimeout(() => {
+            setMarkdownText(
+              prev => `${prev}\n\n![업로드된 이미지](${imageUrl})\n\n`
+            )
+          }, 500)
+        }
+      )
+    }
+  }
+
   const handlePublish = async () => {
     if (!title || !markdownText) {
       alert('제목과 내용을 모두 입력해주세요.')
@@ -73,16 +108,47 @@ const Edit = () => {
     }
 
     try {
-      const postDoc = doc(db, 'posts', id)
-      await updateDoc(postDoc, {
-        title,
-        groupTitle: selectedOption,
-        content: markdownText,
-        date: Timestamp.fromDate(new Date())
-      })
+      let thumbnailUrl = ''
 
-      alert('게시글이 성공적으로 수정되었습니다!')
-      navigate('/')
+      if (thumbnail) {
+        const storageRef = ref(storage, `thumbnails/${thumbnail.name}`)
+        const uploadTask = uploadBytesResumable(storageRef, thumbnail)
+
+        await new Promise((resolve, reject) => {
+          uploadTask.on(
+            'state_changed',
+            snapshot => {
+              console.log(
+                `업로드 진행률: ${(snapshot.bytesTransferred / snapshot.totalBytes) * 100}%`
+              )
+            },
+            error => {
+              console.error('썸네일 업로드 실패:', error)
+              reject(error)
+            },
+            async () => {
+              thumbnailUrl = await getDownloadURL(uploadTask.snapshot.ref)
+              console.log('썸네일 업로드 완료:', thumbnailUrl)
+              resolve(thumbnailUrl)
+            }
+          )
+        })
+      }
+
+      setTimeout(async () => {
+        const postDoc = doc(db, 'posts', id)
+        await updateDoc(postDoc, {
+          title,
+          groupTitle: selectedOption,
+          content: markdownText,
+          date: Timestamp.fromDate(new Date()),
+          thumbnail: thumbnailUrl,
+          createdAt: Timestamp.fromDate(new Date())
+        })
+
+        alert('게시글이 성공적으로 수정되었습니다!')
+        navigate('/')
+      }, 1000)
     } catch (error) {
       console.error('게시글 수정 실패:', error)
       alert('게시글 수정 중 오류가 발생했습니다.')
@@ -150,7 +216,7 @@ const Edit = () => {
         {item && (
           <input
             type="text"
-            value={title || item.title}
+            value={title}
             onChange={e => setTitle(e.target.value)}
             placeholder="제목을 입력하세요."
             css={titleInputStyle}
@@ -161,10 +227,18 @@ const Edit = () => {
       <div
         className="icon-section"
         css={iconSectionStyle}>
-        <FormatSizeIcon css={iconStyle} />
-        <FormatBoldIcon css={iconStyle} />
-        <FormatUnderlinedIcon css={iconStyle} />
         <FormatColorTextIcon css={iconStyle} />
+        <p css={middleStyle}>|</p>
+        <label htmlFor="image-upload">
+          <ImageIcon css={iconStyle} />
+        </label>
+        <input
+          id="image-upload"
+          type="file"
+          accept="image/*"
+          onChange={handleImageFileChange}
+          style={{ display: 'none' }}
+        />
         <p css={middleStyle}>|</p>
         <AttachFileIcon css={iconStyle} />
       </div>
@@ -173,7 +247,7 @@ const Edit = () => {
         <div css={contentWrapperStyle}>
           {item && (
             <textarea
-              value={markdownText || item.content}
+              value={markdownText}
               onChange={e => setMarkdownText(e.target.value)}
               placeholder="내용을 작성하세요."
               css={textAreaStyle}
@@ -205,12 +279,20 @@ const Edit = () => {
             placeholder="옵션을 선택하세요"
             onChange={handleSelectChange}
           />
+          <input
+            id="file-upload"
+            type="file"
+            onChange={handleFileChange}
+            accept="image/*"
+          />
+
+          <label htmlFor="file-upload">썸네일 선택</label>
+          <button
+            css={uploadBtnStyle}
+            onClick={handlePublish}>
+            <h1 css={uploadTextStyle}>수정</h1>
+          </button>
         </div>
-        <button
-          css={uploadBtnStyle}
-          onClick={handlePublish}>
-          <h1 css={uploadTextStyle}>수정</h1>
-        </button>
       </div>
     </div>
   )
@@ -399,7 +481,7 @@ const uploadBtnStyle = css`
 
 const uploadTextStyle = css`
   color: ${color.white};
-  font-size: ${fontSize.xxs};
+  font-size: 15px;
 `
 
 const backTextStyle = css`
@@ -408,6 +490,26 @@ const backTextStyle = css`
 
 const selecboxWrapper = css`
   display: flex;
-  margin-left: 63vw;
   align-items: center;
+  gap: 8px;
+
+  input {
+    display: none;
+  }
+
+  label {
+    padding: 8px 16px;
+    font-size: 15px;
+    background-color: ${color.gray};
+    color: ${color.white};
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.5s ease-in-out;
+    text-align: center;
+    display: inline-block;
+
+    &:hover {
+      background-color: ${color.darkYellow};
+    }
+  }
 `
