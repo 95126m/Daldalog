@@ -56,6 +56,13 @@ const ApexChart: React.FC = () => {
               new Date('2025-01-24').getTime(),
               new Date('2025-01-25').getTime()
             ]
+          },
+          {
+            x: 'Feat: thumbnail, image upload',
+            y: [
+              new Date('2025-01-25').getTime(),
+              new Date('2025-01-27').getTime()
+            ]
           }
         ]
       }

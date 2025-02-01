@@ -106,9 +106,10 @@ const Detail = () => {
 
       querySnapshot.forEach(doc => {
         const post = doc.data()
-        const date = post.date
-          ? new Date(post.date.seconds * 1000).toLocaleString()
-          : ''
+        const date = post.date?.seconds
+          ? new Date(post.date.seconds * 1000).toISOString().split('T')[0]
+          : post.date || ''
+
         postsList.push({
           id: doc.id,
           title: post.title,
@@ -196,7 +197,20 @@ const Detail = () => {
       <div
         className="content-section"
         css={contentSectionStyle}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            img: ({ ...props }) => (
+              <img
+                {...props}
+                css={css`
+                  max-width: 100%;
+                  max-height: 300px;
+                  object-fit: contain;
+                `}
+              />
+            )
+          }}>
           {item.content}
         </ReactMarkdown>
       </div>

@@ -4,19 +4,19 @@ import { useNavigate } from 'react-router-dom'
 import { css } from '@emotion/react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { db } from '@/api/firebaseApp'
+import { db, storage } from '@/api/firebaseApp'
 import { collection, addDoc, Timestamp } from 'firebase/firestore'
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { color } from '@/constants/color'
 import { fontSize } from '@/constants/font'
-import FormatBoldIcon from '@mui/icons-material/FormatBold'
+import ImageIcon from '@mui/icons-material/Image'
 import AttachFileIcon from '@mui/icons-material/AttachFile'
-import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined'
 import FormatColorTextIcon from '@mui/icons-material/FormatColorText'
-import FormatSizeIcon from '@mui/icons-material/FormatSize'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SelectBox from '@/components/SelectBox'
 
 const Write = () => {
+  const [thumbnail, setThumbnail] = useState<File | null>(null)
   const navigate = useNavigate()
   const [title, setTitle] = useState('')
   const [markdownText, setMarkdownText] = useState('')
@@ -31,11 +31,46 @@ const Write = () => {
     { label: '프로젝트', value: '프로젝트' },
     { label: '트러블슈팅', value: '트러블슈팅' },
     { label: '공지사항', value: '공지사항' },
-    { label: '스몰토크', value: '스몰토크' },
+    { label: '스몰토크', value: '스몰토크' }
   ]
 
   const handleBack = () => {
     navigate(-1)
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setThumbnail(event.target.files[0])
+    }
+  }
+
+  const handleImageFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (event.target.files && event.target.files[0]) {
+      const imageRef = ref(storage, `posts/${event.target.files[0].name}`)
+      const uploadTask = uploadBytesResumable(imageRef, event.target.files[0])
+
+      uploadTask.on(
+        'state_changed',
+        snapshot => {
+          console.log(
+            `이미지 업로드 진행률: ${(snapshot.bytesTransferred / snapshot.totalBytes) * 100}%`
+          )
+        },
+        error => {
+          console.error('이미지 업로드 실패:', error)
+        },
+        async () => {
+          const imageUrl = await getDownloadURL(uploadTask.snapshot.ref)
+          console.log('업로드된 이미지 URL:', imageUrl)
+
+          setMarkdownText(
+            prev => `${prev}\n\n![업로드된 이미지](${imageUrl})\n\n`
+          )
+        }
+      )
+    }
   }
 
   const handlePublish = async () => {
@@ -45,12 +80,41 @@ const Write = () => {
     }
 
     try {
+      let thumbnailUrl = ''
+
+      if (thumbnail) {
+        const storageRef = ref(storage, `thumbnails/${thumbnail.name}`)
+        const uploadTask = uploadBytesResumable(storageRef, thumbnail)
+
+        await new Promise((resolve, reject) => {
+          uploadTask.on(
+            'state_changed',
+            snapshot => {
+              const progress =
+                (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+              console.log(`업로드 진행률: ${progress}%`)
+            },
+            error => {
+              console.error('업로드 실패:', error)
+              reject(error)
+            },
+            async () => {
+              thumbnailUrl = await getDownloadURL(uploadTask.snapshot.ref)
+              console.log('업로드 완료! URL:', thumbnailUrl)
+              resolve(thumbnailUrl)
+            }
+          )
+        })
+      }
+
       const postsCollection = collection(db, 'posts')
       await addDoc(postsCollection, {
         title,
         groupTitle: selectedOption,
         content: markdownText,
-        date: Timestamp.fromDate(new Date())
+        date: Timestamp.fromDate(new Date()),
+        thumbnail: thumbnailUrl,
+        createdAt: Timestamp.fromDate(new Date())
       })
 
       alert('게시글이 성공적으로 업로드되었습니다!')
@@ -78,10 +142,18 @@ const Write = () => {
       <div
         className="icon-section"
         css={iconSectionStyle}>
-        <FormatSizeIcon css={iconStyle} />
-        <FormatBoldIcon css={iconStyle} />
-        <FormatUnderlinedIcon css={iconStyle} />
         <FormatColorTextIcon css={iconStyle} />
+        <p css={middleStyle}>|</p>
+        <label htmlFor="image-upload">
+          <ImageIcon css={iconStyle} />
+        </label>
+        <input
+          id="image-upload"
+          type="file"
+          accept="image/*"
+          onChange={handleImageFileChange}
+          style={{ display: 'none' }}
+        />
         <p css={middleStyle}>|</p>
         <AttachFileIcon css={iconStyle} />
       </div>
@@ -120,12 +192,22 @@ const Write = () => {
             placeholder="옵션을 선택하세요"
             onChange={handleSelectChange}
           />
+
+          <input
+            id="file-upload"
+            type="file"
+            onChange={handleFileChange}
+            accept="image/*"
+          />
+
+          <label htmlFor="file-upload">썸네일 선택</label>
+
+          <button
+            css={uploadBtnStyle}
+            onClick={handlePublish}>
+            <h1 css={uploadTextStyle}>출간하기</h1>
+          </button>
         </div>
-        <button
-          css={uploadBtnStyle}
-          onClick={handlePublish}>
-          <h1 css={uploadTextStyle}>출간하기</h1>
-        </button>
       </div>
     </div>
   )
@@ -253,12 +335,12 @@ const previewWrapperStyle = css`
   }
 
   pre {
-    background-color:${color.lightGray}; 
-    padding: 20px; 
+    background-color: ${color.lightGray};
+    padding: 20px;
     border-radius: 3px;
-    font-size: 14px; 
-    white-space: pre-wrap; 
-    word-wrap: break-word; 
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
   }
 `
 
@@ -314,7 +396,7 @@ const uploadBtnStyle = css`
 
 const uploadTextStyle = css`
   color: ${color.white};
-  font-size: ${fontSize.xxs};
+  font-size: 15px;
 `
 
 const backTextStyle = css`
@@ -323,6 +405,26 @@ const backTextStyle = css`
 
 const selecboxWrapper = css`
   display: flex;
-  margin-left: 63vw;
   align-items: center;
+  gap: 8px;
+
+  input {
+    display: none;
+  }
+
+  label {
+    padding: 8px 16px;
+    font-size: 15px;
+    background-color: ${color.gray};
+    color: ${color.white};
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.5s ease-in-out;
+    text-align: center;
+    display: inline-block;
+
+    &:hover {
+      background-color: ${color.darkYellow};
+    }
+  }
 `
