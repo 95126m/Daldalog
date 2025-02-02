@@ -35,6 +35,13 @@ const GlobalStyles = () => {
           font-style: normal;
         }
 
+        @font-face {
+          font-family: 'TTTtangsbudaejjigaeB';
+          src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2212@1.0/TTTtangsbudaejjigaeB.woff2') format('woff2');
+          font-weight: 700;
+          font-style: normal;
+      }
+
         body {
           font-family: 'S-CoreDream-3Light', Arial, sans-serif;
           color: ${color.white};
@@ -52,9 +59,13 @@ const GlobalStyles = () => {
         h2,
         h3,
         h4,
-        h5,
+        
         h6 {
           font-family: 'STUNNING-Bd', 'Roboto';
+        }
+
+        h5 {
+          font-family: 'TTTtangsbudaejjigaeB';
         }
 
         a {

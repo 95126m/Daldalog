@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ref, get, getDatabase, push, remove } from 'firebase/database'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
@@ -29,6 +29,7 @@ import Loading from '@/components/Loading'
 import AddIcon from '@mui/icons-material/Add'
 import DoneIcon from '@mui/icons-material/Done'
 import RemoveIcon from '@mui/icons-material/Remove'
+import { motion, useInView } from 'framer-motion'
 
 interface Post {
   id: string
@@ -185,7 +186,7 @@ const Home = () => {
         if (!snapshot.empty) {
           const postsArray: Post[] = snapshot.docs.map(doc => {
             const postData = doc.data()
-            console.log("🔥 Firestore에서 가져온 데이터:", postData);
+            console.log('🔥 Firestore에서 가져온 데이터:', postData)
 
             return {
               id: doc.id,
@@ -198,10 +199,10 @@ const Home = () => {
                     .split('T')[0]
                 : postData.date || '',
 
-                createdAt: postData.createdAt?.seconds
+              createdAt: postData.createdAt?.seconds
                 ? new Date(postData.createdAt.seconds * 1000).toLocaleString()
                 : new Date().toLocaleString(),
-                
+
               image: postData.image || '',
               thumbnail: postData.thumbnail || ''
             }
@@ -243,9 +244,33 @@ const Home = () => {
     startIndex + ITEMS_PER_PAGE
   )
 
+  const fadeIn = {
+    hidden: { opacity: 0, y: 100 },
+    visible: { opacity: 1, y: 0, transition: { duration: 1.5, type: 'spring' } }
+  }
+
+  const firstSectionRef = useRef(null)
+  const secondSectionRef = useRef(null)
+  const thirdSectionRef = useRef(null)
+  const fourthSectionRef = useRef(null)
+  const fifthSectionRef = useRef(null)
+  const sixthSectionRef = useRef(null)
+
+  const firstInView = useInView(firstSectionRef, { once: false })
+  const secondInView = useInView(secondSectionRef, { once: false })
+  const thirdInView = useInView(thirdSectionRef, { once: false })
+  const fourthInView = useInView(fourthSectionRef, { once: false })
+  const fifthInView = useInView(fifthSectionRef, { once: false })
+  const sixthInView = useInView(sixthSectionRef, { once: false })
+
   return (
     <div css={wrapperStyle}>
-      <section className="first">
+      <motion.section
+        ref={firstSectionRef}
+        variants={fadeIn}
+        initial="hidden"
+        animate={firstInView ? 'visible' : 'hidden'}
+        className="first">
         <div
           className="content"
           css={firstSectionContentStyle}>
@@ -255,47 +280,54 @@ const Home = () => {
             css={firstSectionImgStyle}
           />
           <div css={firstSectionTextStyle}>
-            <h2>【스몰토크】</h2>
-            <p>
-              다양한 블로그 플랫폼들이 세상에 존재하는데, 운영자는 어째서
-              본인만의 블로그를 제작하게 되었을까요?
-              <br />
-              이에 대해 의문점이 든다면 하단의 버튼을 클릭해 자세히 알아보세요!
-              😸
-            </p>
+            <h5>지극히 개인적인 생각을 전하는 스몰토크</h5>
             <button onClick={() => handleDetail(introduceContentId)}>
               VIEW
             </button>
+            <p>
+              세상에는 이미 많은 블로그 플랫폼이 존재하지만,
+              <br />그 안에서 제가 바라는 것을 찾기란 쉽지않았습니다.
+              <br />
+              그래서, 저만의 색으로 물들일 작은 공간을 만들었습니다.
+              <br />
+              이곳에 저만의 색깔을 물들이며,
+              <br />
+              시간이 지나도 사라지지 않는 기록들로 채워나갈 예정입니다.
+            </p>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="second">
+      <motion.section
+        ref={secondSectionRef}
+        variants={fadeIn}
+        initial="hidden"
+        animate={secondInView ? 'visible' : 'hidden'}
+        className="second">
         <div
           className="content"
           css={secondSectionContentStyle}>
           <img
             src={ProfileImage}
-            alt="이미지"
+            alt="프로필 이미지"
             css={secondSectionImgStyle}
           />
           <div css={secondSectionTextStyle}>
             <h1>달다로</h1>
-            <p>
-              느지막히 개발공부를 시작하게된 달다로입니다.
-              <br />
-              공부필기 및 복습겸 제작하게된 블로그입니다.
-              <br />
-              꾸준하게 공부하며 성장하는 모습 보여드리겠습니다! 😸
-            </p>
+            <p>느지막히 개발 공부를 시작하게 된 달다로입니다! 😸</p>
             <button onClick={() => handleDetail(profileContentId)}>
               Read More
             </button>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="sixth">
+      <motion.section
+        ref={sixthSectionRef}
+        variants={fadeIn}
+        initial="hidden"
+        animate={sixthInView ? 'visible' : 'hidden'}
+        className="sixth">
         <div
           className="content"
           css={sixthSectionContentStyle}>
@@ -337,9 +369,14 @@ const Home = () => {
             </ul>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="third">
+      <motion.section
+        ref={thirdSectionRef}
+        variants={fadeIn}
+        initial="hidden"
+        animate={thirdInView ? 'visible' : 'hidden'}
+        className="third">
         <div className="content">
           <div css={tabContainerStyle}>
             <div css={thirdTitleWrapper}>
@@ -394,16 +431,20 @@ const Home = () => {
               )}
             </div>
           </div>
-
           <Pagination
             totalPage={totalPage}
             currentPage={currentPage}
             handlePageChange={setCurrentPage}
           />
         </div>
-      </section>
+      </motion.section>
 
-      <section className="fourth">
+      <motion.section
+        ref={fourthSectionRef}
+        variants={fadeIn}
+        initial="hidden"
+        animate={fourthInView ? 'visible' : 'hidden'}
+        className="fourth">
         <div
           className="content"
           css={fourthSectionContentStyle}>
@@ -415,9 +456,14 @@ const Home = () => {
             <ApexChart />
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="fifth">
+      <motion.section
+        ref={fifthSectionRef}
+        variants={fadeIn}
+        initial="hidden"
+        animate={fifthInView ? 'visible' : 'hidden'}
+        className="fifth">
         <div
           className="content"
           css={fifthSectionContentStyle}>
@@ -432,7 +478,7 @@ const Home = () => {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {isAdmin && (
         <div css={writeIconStyle}>
@@ -459,7 +505,7 @@ const wrapperStyle = css`
   grid-template-areas:
     'first first'
     'third second'
-    '. sixth'
+    'third sixth'
     'fourth fourth'
     'fifth fifth';
   gap: 60px;
@@ -522,7 +568,7 @@ const wrapperStyle = css`
 const firstSectionContentStyle = css`
   position: relative;
   width: 100vw;
-  height: 600px;
+  height: 100vh;
   margin: 0 auto;
 `
 
@@ -531,34 +577,38 @@ const firstSectionImgStyle = css`
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: 70%;
   object-fit: cover;
   z-index: 1;
-  filter: brightness(0.5);
+  filter: brightness(0.3) blur(2px);
 `
 
 const firstSectionTextStyle = css`
   position: relative;
   z-index: 2;
   text-align: left;
-  color: ${color.white};
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: flex-end;
   align-items: flex-start;
-  height: 100%;
-  margin-top: 130px;
+  height: 90%;
   margin-left: 60px;
 
-  h2 {
+  h5 {
     font-size: ${fontSize.xl};
     margin: 0;
+    margin-bottom: 20px;
+    color: ${color.darkYellow};
   }
 
   p {
+    position: absolute;
+    right: 0;
+    bottom: 0;
     font-size: ${fontSize.xxs};
-    margin-top: 10px;
-    margin-bottom: 40px;
+    color: ${color.charcoal};
+    padding: 30px 60px;
+    text-align: right;
   }
 
   button {
@@ -566,16 +616,16 @@ const firstSectionTextStyle = css`
     font-size: ${fontSize.xxs};
     color: ${color.white};
     background-color: rgba(0, 0, 0, 0.4);
-    border: 2px solid ${color.black};
-    border-radius: 4px;
+    border: 2px solid black;
     cursor: pointer;
+    margin-bottom: 200px;
     transition:
       background-color 0.5s ease,
       color 0.5s ease;
 
     &:hover {
-      background-color: rgba(0, 0, 0, 0.7);
-      border: 2px solid ${color.black};
+      background-color: rgba(0, 0, 0, 0.9);
+      border: 2px solid black;
     }
   }
 `
@@ -597,7 +647,7 @@ const secondSectionTextStyle = css`
   z-index: 2;
 
   h1 {
-    font-size: ${fontSize.lg};
+    font-size: ${fontSize.md};
     color: ${color.darkYellow};
     margin-top: 20px;
     margin-bottom: 20px;
@@ -686,6 +736,11 @@ const tabItemStyle = css`
     width: 250px;
     height: 150px;
     object-fit: cover;
+    transition: transform 0.3s ease-in-out;
+
+    &:hover {
+      transform: scale(1.1);
+    }
   }
 
   .text-container {
