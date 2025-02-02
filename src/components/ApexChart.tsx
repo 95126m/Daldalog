@@ -1,18 +1,26 @@
-import React, { useState } from 'react'
+import React, { useMemo } from 'react'
 import ReactApexChart from 'react-apexcharts'
 import { ApexOptions } from 'apexcharts'
 
 const ApexChart: React.FC = () => {
-  const [state, setState] = useState<{
-    series: {
-      data: {
-        x: string
-        y: [number, number]
-      }[]
-    }[]
-    options: ApexOptions
-  }>({
-    series: [
+  const chartData = useMemo(() => {
+    const options: ApexOptions = {
+      chart: {
+        height: 200,
+        type: 'rangeBar'
+      },
+      plotOptions: {
+        bar: {
+          horizontal: true
+        }
+      },
+      xaxis: {
+        type: 'datetime'
+      },
+      colors: ['#FFCC00']
+    }
+
+    const series = [
       {
         data: [
           {
@@ -63,33 +71,27 @@ const ApexChart: React.FC = () => {
               new Date('2025-01-25').getTime(),
               new Date('2025-01-27').getTime()
             ]
-          }
+          },
+          {
+            x: 'Style: animation',
+            y: [
+              new Date('2025-01-27').getTime(),
+              new Date('2025-01-28').getTime()
+            ]
+          },
         ]
       }
-    ],
-    options: {
-      chart: {
-        height: 200,
-        type: 'rangeBar'
-      },
-      plotOptions: {
-        bar: {
-          horizontal: true
-        }
-      },
-      xaxis: {
-        type: 'datetime'
-      },
-      colors: ['#FFCC00']
-    }
-  })
+    ]
+
+    return { series, options }
+  }, [])
 
   return (
     <div>
       <div id="chart">
         <ReactApexChart
-          options={state.options}
-          series={state.series}
+          options={chartData.options}
+          series={chartData.series}
           type="rangeBar"
           height={250}
         />

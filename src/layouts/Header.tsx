@@ -11,9 +11,15 @@ import Logo from '@/assets/logo3.png'
 const Header = () => {
   const [isHovered, setIsHovered] = useState(false)
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
     <div css={wrapperStyle}>
-      <Link to="/">
+      <Link
+        to="/"
+        onClick={scrollToTop}>
         <img
           src={Logo}
           alt="Logo"
