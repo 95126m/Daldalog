@@ -285,14 +285,9 @@ const Home = () => {
               VIEW
             </button>
             <p>
-              세상에는 이미 많은 블로그 플랫폼이 존재하지만,
-              <br />그 안에서 제가 바라는 것을 찾기란 쉽지않았습니다.
+              차근차근 개발 공부를 진행하는 달다로가
               <br />
-              그래서, 저만의 색으로 물들일 작은 공간을 만들었습니다.
-              <br />
-              이곳에 저만의 색깔을 물들이며,
-              <br />
-              시간이 지나도 사라지지 않는 기록들로 채워나갈 예정입니다.
+              블로그 방문자분들께 전하고 싶은 이야기를 담았습니다.
             </p>
           </div>
         </div>
@@ -607,7 +602,7 @@ const firstSectionTextStyle = css`
     bottom: 0;
     font-size: ${fontSize.xxs};
     color: ${color.charcoal};
-    padding: 30px 60px;
+    padding: 100px 60px;
     text-align: right;
   }
 

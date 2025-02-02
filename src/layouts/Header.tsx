@@ -1,16 +1,11 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react'
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
 import { color } from '@/constants/color'
 import { fontSize } from '@/constants/font'
-import NightlightRoundIcon from '@mui/icons-material/NightlightRound'
-import LightModeIcon from '@mui/icons-material/LightMode'
 import Logo from '@/assets/logo3.png'
 
 const Header = () => {
-  const [isHovered, setIsHovered] = useState(false)
-
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -26,18 +21,6 @@ const Header = () => {
           css={{ height: '26px', paddingLeft: '20px', cursor: 'pointer' }}
         />
       </Link>
-
-      <div
-        className="icon-wrapper"
-        css={iconWrapperStyle}>
-        <div
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          css={themeToggleWrapperStyle}>
-          <LightModeIcon css={[iconStyle, !isHovered && visibleStyle]} />
-          <NightlightRoundIcon css={[iconStyle, isHovered && visibleStyle]} />
-        </div>
-      </div>
     </div>
   )
 }
@@ -74,30 +57,4 @@ const wrapperStyle = css`
       cursor: pointer;
     }
   }
-`
-
-const iconWrapperStyle = css`
-  display: flex;
-  align-items: center;
-  position: relative;
-`
-
-const themeToggleWrapperStyle = css`
-  position: relative;
-  width: 30px;
-  height: 30px;
-`
-
-const iconStyle = css`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 30px;
-  height: 30px;
-  opacity: 0;
-  transition: opacity 0.5s ease-in-out;
-`
-
-const visibleStyle = css`
-  opacity: 1;
 `

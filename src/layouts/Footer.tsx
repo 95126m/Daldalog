@@ -12,6 +12,9 @@ const Footer = () => {
   const database = getDatabase()
   const navigate = useNavigate()
   const [isSignin, setIsSignin] = useState<boolean>(false)
+  const handleEmailClick = () => {
+    window.location.href = 'mailto:95126m@naver.com'
+  }
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -53,7 +56,7 @@ const Footer = () => {
       <p>© 2025 DALDALOG All Rights Reserved.</p>
       <nav>
         <span>|</span>
-        <a href="">이메일 문의</a>
+        <p onClick={handleEmailClick}>이메일 문의</p>
         <span>|</span>
         {isSignin ? (
           <button
@@ -98,7 +101,7 @@ const wrapperStyle = css`
     align-items: center;
     gap: 10px;
 
-    a, button {
+    p, button {
       font-size: ${fontSize.xxs};
       color: ${color.white};
       text-decoration: none;
