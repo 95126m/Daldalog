@@ -1,4 +1,3 @@
-import React from 'react'
 import Spinner from '@/assets/loading.gif'
 
 export const Loading = () => {
