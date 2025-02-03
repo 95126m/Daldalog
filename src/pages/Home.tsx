@@ -457,7 +457,7 @@ const firstSectionImgStyle = css`
   top: 0;
   left: 0;
   width: 100%;
-  height: 70%;
+  height: 80%;
   object-fit: cover;
   z-index: 1;
   filter: brightness(0.3) blur(2px);
@@ -471,7 +471,7 @@ const firstSectionTextStyle = css`
   flex-direction: column;
   justify-content: flex-end;
   align-items: flex-start;
-  height: 90%;
+  height: 100%;
   margin-left: 60px;
 
   h5 {
@@ -498,7 +498,7 @@ const firstSectionTextStyle = css`
     background-color: rgba(0, 0, 0, 0.4);
     border: 2px solid black;
     cursor: pointer;
-    margin-bottom: 200px;
+    margin-bottom: 300px;
     transition:
       background-color 0.5s ease,
       color 0.5s ease;
