@@ -4,28 +4,14 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { ref, get, getDatabase } from 'firebase/database'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  doc,
-  deleteDoc
-} from 'firebase/firestore'
+import { doc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/api/firebaseApp'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { color } from '@/constants/color'
 import { fontSize } from '@/constants/font'
 import Modal from '@/components/Modal'
-
-interface Post {
-  id: string
-  title: string
-  groupTitle: string
-  content: string
-  date: string
-  image?: string
-}
+import { usePostsStore } from '@/store/usePostsStore'
 
 const Detail = () => {
   const { id } = useParams<{ id: string }>()
@@ -33,8 +19,13 @@ const Detail = () => {
   const navigate = useNavigate()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState<boolean>(false)
-  const [postsData, setPostsData] = useState<Post[]>([])
-  const [currentPost, setCurrentPost] = useState<Post | null>(null)
+
+  const { postsData, fetchPosts } = usePostsStore()
+  useEffect(() => {
+    fetchPosts()
+  }, [fetchPosts])
+
+  const currentPost = postsData.find(post => post.id === id) || null
 
   const currentIndex = postsData.findIndex(
     post => post.id === id && post.groupTitle === currentPost?.groupTitle
@@ -98,40 +89,6 @@ const Detail = () => {
   }
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      const db = getFirestore()
-      const postsCollection = collection(db, 'posts')
-      const querySnapshot = await getDocs(postsCollection)
-      const postsList: Post[] = []
-
-      querySnapshot.forEach(doc => {
-        const post = doc.data()
-        const date = post.date?.seconds
-          ? new Date(post.date.seconds * 1000).toISOString().split('T')[0]
-          : post.date || ''
-
-        postsList.push({
-          id: doc.id,
-          title: post.title,
-          groupTitle: post.groupTitle,
-          content: post.content,
-          date: date
-        })
-      })
-      setPostsData(postsList)
-    }
-
-    fetchPosts()
-  }, [])
-
-  useEffect(() => {
-    if (id && postsData.length > 0) {
-      const foundPost = postsData.find(post => post.id === id)
-      setCurrentPost(foundPost || null)
-    }
-  }, [id, postsData])
-
-  useEffect(() => {
     const checkAdmin = async () => {
       try {
         const database = getDatabase()
@@ -172,7 +129,11 @@ const Detail = () => {
           <div className="text-container">
             <h4>{item.groupTitle}</h4>
             <h3>{item.title}</h3>
-            <p>{item.date}</p>
+            <p>
+              {item.date
+                ? new Date(item.date).toISOString().split('T')[0]
+                : '날짜 없음'}
+            </p>
           </div>
         </div>
       </div>

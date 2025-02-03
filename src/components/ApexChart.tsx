@@ -69,14 +69,21 @@ const ApexChart: React.FC = () => {
             x: 'Feat: thumbnail, image upload',
             y: [
               new Date('2025-01-25').getTime(),
-              new Date('2025-01-27').getTime()
+              new Date('2025-01-28').getTime()
             ]
           },
           {
             x: 'Style: animation',
             y: [
-              new Date('2025-01-27').getTime(),
-              new Date('2025-01-28').getTime()
+              new Date('2025-01-28').getTime(),
+              new Date('2025-01-29').getTime()
+            ]
+          },
+          {
+            x: 'fix: refactoring',
+            y: [
+              new Date('2025-01-29').getTime(),
+              new Date('2025-02-03').getTime()
             ]
           },
         ]
