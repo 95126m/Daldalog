@@ -66,7 +66,7 @@ const Footer = () => {
             로그아웃
           </button>
         ) : (
-          <Link to="/signin">관리자 로그인</Link>
+          <Link to="/signin" css={linkStyle}>관리자 로그인</Link>
         )}
       </nav>
     </div>
@@ -127,6 +127,18 @@ const logoutButtonStyle = css`
   color: ${color.white};
   background: none;
   border: none;
+  cursor: pointer;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: ${color.yellow};
+  }
+`
+
+const linkStyle = css`
+  font-size: ${fontSize.xxs};
+  color: ${color.white};
+  text-decoration: none;
   cursor: pointer;
   transition: color 0.3s ease;
 
