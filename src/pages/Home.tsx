@@ -1,17 +1,8 @@
 /** @jsxImportSource @emotion/react */
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ref, get, getDatabase, push, remove } from 'firebase/database'
+import { ref, get, getDatabase } from 'firebase/database'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  query,
-  orderBy
-} from 'firebase/firestore'
-import { onValue } from 'firebase/database'
-
 import { css } from '@emotion/react'
 import { color } from '@/constants/color'
 import { fontSize } from '@/constants/font'
@@ -30,68 +21,42 @@ import AddIcon from '@mui/icons-material/Add'
 import DoneIcon from '@mui/icons-material/Done'
 import RemoveIcon from '@mui/icons-material/Remove'
 import { motion, useInView } from 'framer-motion'
-
-interface Post {
-  id: string
-  title: string
-  groupTitle: string
-  content: string
-  date: Date | string
-  image?: string
-  thumbnail?: string
-}
-
-interface Todos {
-  id: string
-  value: string
-}
+import { useTodosStore } from '@/store/useTodosStore'
+import { usePostsStore } from '@/store/usePostsStore'
 
 const Home = () => {
   const navigate = useNavigate()
   const auth = getAuth()
-  const firestore = getFirestore()
-  const [todos, setTodos] = useState('')
-  const [todosItem, setTodosItem] = useState<Todos[]>([])
-
-  const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [postsData, setPostsData] = useState<Post[]>([])
   const [activeGroup, setActiveGroup] = useState<string>('전체')
   const [currentPage, setCurrentPage] = useState<number>(0)
   const [isAdmin, setIsAdmin] = useState<boolean>(false)
   const introduceContentId = 'HGW5oBEVHa4FmEV4iWKJ'
   const profileContentId = 'cL3VjyK9ML1AwQ3dobDO'
+  const { todos, todosItem, setTodos, addTodo, deleteTodo, fetchTodos } =
+    useTodosStore()
+  const { isLoading, postsData, fetchPosts } = usePostsStore()
+
+  useEffect(() => {
+    fetchTodos()
+    fetchPosts()
+  }, [fetchTodos, fetchPosts])
 
   const handleAddTodosChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTodos(event.target.value)
   }
 
-  const handleAddTodos = async () => {
+  const handleAddTodos = () => {
     if (todos.trim() === '') {
       alert('할 일을 입력해주세요.')
       return
     }
 
-    try {
-      const database = getDatabase()
-      const todosRef = ref(database, 'todos')
-      await push(todosRef, todos)
-      setTodos('')
-    } catch (error) {
-      console.error('Firebase에 데이터 추가 실패:', error)
-      alert('데이터 추가 중 문제가 발생했습니다.')
-    }
+    addTodo()
+    setTodos('')
   }
 
-  const handleDeleteTodos = async (id: string) => {
-    try {
-      const database = getDatabase()
-      const todoRef = ref(database, `todos/${id}`)
-      await remove(todoRef)
-      setTodosItem(prevTodos => prevTodos.filter(todo => todo.id !== id))
-    } catch (error) {
-      console.error('할 일 삭제 실패:', error)
-      alert('할 일을 삭제하는 중 문제가 발생했습니다.')
-    }
+  const handleDeleteTodos = (id: string) => {
+    deleteTodo(id)
   }
 
   const handleWrite = () => {
@@ -140,87 +105,6 @@ const Home = () => {
 
     checkAdmin()
   }, [auth])
-
-  useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todosItem))
-  }, [todosItem])
-
-  useEffect(() => {
-    const savedTodos = localStorage.getItem('todos')
-    if (savedTodos) {
-      setTodosItem(JSON.parse(savedTodos))
-    }
-  }, [])
-
-  useEffect(() => {
-    const database = getDatabase()
-    const todosRef = ref(database, 'todos')
-
-    const unsubscribe = onValue(todosRef, snapshot => {
-      if (snapshot.exists()) {
-        const data: Record<string, string> = snapshot.val()
-        const todosArray: Todos[] = Object.entries(data).map(
-          ([key, value]) => ({
-            id: key,
-            value
-          })
-        )
-        setTodosItem(todosArray)
-      } else {
-        setTodosItem([])
-      }
-    })
-
-    return () => unsubscribe()
-  }, [])
-
-  useEffect(() => {
-    const fetchPosts = async () => {
-      setIsLoading(true)
-
-      try {
-        const postsCollection = collection(firestore, 'posts')
-        const postsQuery = query(postsCollection, orderBy('createdAt', 'desc'))
-        const snapshot = await getDocs(postsQuery)
-
-        if (!snapshot.empty) {
-          const postsArray: Post[] = snapshot.docs.map(doc => {
-            const postData = doc.data()
-            console.log('🔥 Firestore에서 가져온 데이터:', postData)
-
-            return {
-              id: doc.id,
-              title: postData.title,
-              groupTitle: postData.groupTitle,
-              content: postData.content,
-              date: postData.date?.seconds
-                ? new Date(postData.date.seconds * 1000)
-                    .toISOString()
-                    .split('T')[0]
-                : postData.date || '',
-
-              createdAt: postData.createdAt?.seconds
-                ? new Date(postData.createdAt.seconds * 1000).toLocaleString()
-                : new Date().toLocaleString(),
-
-              image: postData.image || '',
-              thumbnail: postData.thumbnail || ''
-            }
-          })
-
-          setPostsData(postsArray)
-        } else {
-          console.log('Firestore 데이터가 없습니다.')
-        }
-      } catch (error) {
-        console.error('Firestore에서 데이터 가져오기 실패:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchPosts()
-  }, [firestore])
 
   const ITEMS_PER_PAGE = 5
   const allGroups = [
@@ -415,10 +299,11 @@ const Home = () => {
                         {item.title}
                       </h3>
                       <p>
-                        {item.date instanceof Date
-                          ? item.date.toLocaleString()
-                          : item.date}
+                        {item.date
+                          ? new Date(item.date).toISOString().split('T')[0]
+                          : '날짜 없음'}
                       </p>
+
                       <span>{handleContent(item.content, 100)}</span>
                     </div>
                   </div>
