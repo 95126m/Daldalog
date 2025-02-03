@@ -31,7 +31,9 @@ const Write = () => {
     { label: '프로젝트', value: '프로젝트' },
     { label: '트러블슈팅', value: '트러블슈팅' },
     { label: '공지사항', value: '공지사항' },
-    { label: '스몰토크', value: '스몰토크' }
+    { label: '스몰토크', value: '스몰토크' },
+    { label: '알아보자', value: '알아보자' },
+    { label: 'IT뉴스', value: 'IT뉴스' }
   ]
 
   const handleBack = () => {
